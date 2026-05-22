@@ -401,6 +401,7 @@ export default {
     "ui.settings.colorScheme.rose": "ローズ",
     "ui.settings.colorScheme.teal": "ティール",
     "ui.settings.themeAuto": "自動 (18:00-06:00 ダーク)",
+    "ui.settings.themeSystem": "システムに従う",
     "ui.settings.themeLight": "ライト",
     "ui.settings.themeDark": "ダーク",
     "ui.settings.cloudflaredTestRequired": "まず「トンネルプログラムダウンロード」ボタンをクリックしてください",

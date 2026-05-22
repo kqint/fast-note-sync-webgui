@@ -401,6 +401,7 @@ export default {
     "ui.settings.colorScheme.rose": "玫瑰",
     "ui.settings.colorScheme.teal": "青色",
     "ui.settings.themeAuto": "自動 (18:00-06:00 暗色)",
+    "ui.settings.themeSystem": "跟隨系統",
     "ui.settings.themeLight": "淺色",
     "ui.settings.themeDark": "深色",
     "ui.settings.cloudflaredTestRequired": "請先點擊 隧道程序下載 按鈕",

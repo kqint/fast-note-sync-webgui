@@ -401,6 +401,7 @@ export default {
     "ui.settings.colorScheme.rose": "장미",
     "ui.settings.colorScheme.teal": "청록색",
     "ui.settings.themeAuto": "자동 (18:00-06:00 다크 모드)",
+    "ui.settings.themeSystem": "시스템 설정 따르기",
     "ui.settings.themeLight": "라이트 모드",
     "ui.settings.themeDark": "다크 모드",
     "ui.settings.cloudflaredTestRequired": "먼저 '터널 프로그램 다운로드' 버튼을 클릭하세요.",

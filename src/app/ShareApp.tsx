@@ -29,7 +29,8 @@ export function ShareApp() {
     
     const handleThemeToggle = () => {
         if (theme === "light") setTheme("dark");
-        else if (theme === "dark") setTheme("auto");
+        else if (theme === "dark") setTheme("system");
+        else if (theme === "system") setTheme("auto");
         else setTheme("light");
     };
     const { colorScheme } = useShareSettingsStore();
@@ -368,7 +369,12 @@ export function ShareApp() {
                             </div>
 
                             {/* Theme toggle - Always visible as it's common */}
-                            <Tooltip content={t(theme === "auto" ? "ui.settings.themeAuto" : (resolvedTheme === "dark" ? "ui.settings.themeDark" : "ui.settings.themeLight"))}>
+                            <Tooltip content={t(
+                                theme === "auto" ? "ui.settings.themeAuto"
+                                : theme === "system" ? "ui.settings.themeSystem"
+                                : resolvedTheme === "dark" ? "ui.settings.themeDark"
+                                : "ui.settings.themeLight"
+                            )}>
                                 <Button
                                     variant="ghost"
                                     size="icon"

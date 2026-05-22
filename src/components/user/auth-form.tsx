@@ -104,11 +104,17 @@ export function AuthForm({ onSuccess, registerIsEnable = true }: AuthFormProps) 
         <button
           onClick={() => {
             if (theme === "light") setTheme("dark");
-            else if (theme === "dark") setTheme("auto");
+            else if (theme === "dark") setTheme("system");
+            else if (theme === "system") setTheme("auto");
             else setTheme("light");
           }}
           className="auth-floating-switcher"
-          title={t(theme === "auto" ? "ui.settings.themeAuto" : (resolvedTheme === "dark" ? "ui.settings.themeDark" : "ui.settings.themeLight"))}
+          title={t(
+            theme === "auto" ? "ui.settings.themeAuto"
+            : theme === "system" ? "ui.settings.themeSystem"
+            : resolvedTheme === "dark" ? "ui.settings.themeDark"
+            : "ui.settings.themeLight"
+          )}
         >
           {theme === "auto" ? (
             <SunMoon size={18} />

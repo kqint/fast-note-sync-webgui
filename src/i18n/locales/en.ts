@@ -401,6 +401,7 @@ export default {
     "ui.settings.colorScheme.rose": "Rose",
     "ui.settings.colorScheme.teal": "Teal",
     "ui.settings.themeAuto": "Auto (18:00-06:00 Dark)",
+    "ui.settings.themeSystem": "Follow System",
     "ui.settings.themeLight": "Light",
     "ui.settings.themeDark": "Dark",
     "ui.settings.cloudflaredTestRequired": "Please click the Tunnel Program Download button first",
