@@ -77,6 +77,20 @@ const VIDEO_EXTENSIONS = /\.(mp4|webm|mov|mkv|avi|ogv)$/i;
 const AUDIO_EXTENSIONS = /\.(mp3|wav|ogg|m4a|flac|aac)$/i;
 const MARKDOWN_IMAGE_REGEX = /!\[([^\]]*)\]\(([^)]+)\)/g;
 const HTML_IMAGE_REGEX = /<img\b([^>]*?)\bsrc\s*=\s*(['"])(.*?)\2([^>]*)>/gi;
+// Standard markdown link: [text](url)
+// Negative lookbehind ensures we don't match images ![text](url).
+// 标准 Markdown 超链接：[text](url)；前置否定回顾断言用于排除 ![text](url) 形式的图片语法。
+const MARKDOWN_LINK_REGEX = /(?<!!)\[([^\]]*)\]\(([^)]+)\)/g;
+// HTML <video>/<audio> with src on the tag itself.
+// HTML 视频/音频标签，且 src 属性写在标签本身上（非嵌套 <source>）。
+const HTML_VIDEO_REGEX = /<video\b([^>]*?)\bsrc\s*=\s*(['"])(.*?)\2([^>]*)>/gi;
+const HTML_AUDIO_REGEX = /<audio\b([^>]*?)\bsrc\s*=\s*(['"])(.*?)\2([^>]*)>/gi;
+// HTML <source> tag (typically nested inside <video>/<audio>; commonly
+// written self-closing as `<source ... />`, but the trailing `/` is captured
+// inside the post-src group and stripped/re-emitted by the rewriter).
+// HTML <source> 标签，通常嵌套在 <video>/<audio> 内；可能写成 `<source ... />`
+// 自闭合形式，此时尾部的 `/` 会被吸入 src 之后的捕获组，由重写器负责剥离再补回。
+const HTML_SOURCE_REGEX = /<source\b([^>]*?)\bsrc\s*=\s*(['"])(.*?)\2([^>]*)>/gi;
 
 // Callout 类型 -> 颜色映射（text 必须显式声明，不能动态拼接，否则 Tailwind JIT 扫描不到）
 const CALLOUT_STYLES: Record<string, { border: string; bg: string; text: string; icon: string }> = {
@@ -118,11 +132,47 @@ const CM6_BASIC_SETUP = {
 const REMARK_PLUGINS: NonNullable<React.ComponentProps<typeof ReactMarkdown>["remarkPlugins"]> = [[remarkGfm, { singleTilde: false }]];
 const OBSIDIAN_SANITIZE_SCHEMA = {
     ...defaultSchema,
-    tagNames: [...(defaultSchema.tagNames ?? []), "mark"],
+    tagNames: [
+        ...(defaultSchema.tagNames ?? []),
+        "mark",
+        // Allow inline media tags so notes containing raw HTML <video>/<audio>
+        // (and the <source> children typically used inside them) actually play
+        // instead of being silently stripped by rehype-sanitize.
+        // 放行内联媒体标签，使笔记中的原生 HTML <video>/<audio>（及其常用的
+        // <source> 子标签）能正常播放，而非被 rehype-sanitize 静默剥离。
+        "video",
+        "audio",
+        "source",
+    ],
     attributes: {
         ...(defaultSchema.attributes ?? {}),
         span: [...(defaultSchema.attributes?.span ?? []), "className", "title"],
         img: [...(defaultSchema.attributes?.img ?? []), "width"],
+        // Whitelist of safe presentation/playback attributes only — no event
+        // handlers (onload/onerror/etc) and no scriptable URLs because the
+        // default schema's protocol allowlist is enforced on src.
+        // 只放行用于展示/播放的安全属性；rehype-sanitize 默认协议白名单负责拒绝
+        // javascript: 等可执行 URL，且不放行任何事件处理器属性。
+        video: [
+            "src",
+            "controls",
+            "width",
+            "height",
+            "loop",
+            "autoplay",
+            "muted",
+            "preload",
+            "poster",
+        ],
+        audio: [
+            "src",
+            "controls",
+            "loop",
+            "autoplay",
+            "muted",
+            "preload",
+        ],
+        source: ["src", "type"],
     },
 };
 
@@ -141,6 +191,9 @@ main {
 img, video {
   max-width: 100%;
   border-radius: 10px;
+}
+audio {
+  width: 100%;
 }
 pre {
   overflow-x: auto;
@@ -506,17 +559,6 @@ function resolveAttachmentType(path: string): AttachmentType {
     return "file";
 }
 
-function parseAttachmentPathFromHref(href?: string): string {
-    if (!href) return "";
-    try {
-        const base = typeof window === "undefined" ? "http://localhost" : window.location.origin;
-        const url = new URL(href, base);
-        return (url.searchParams.get("path") ?? href).toLowerCase();
-    } catch {
-        return href.toLowerCase();
-    }
-}
-
 function escapeMarkdownText(text: string): string {
     return text
         .replace(/\\/g, "\\\\")
@@ -577,8 +619,27 @@ function rewriteMarkdownImageLinks(content: string, fileLinks: Record<string, st
         const parsed = parseMarkdownLinkTarget(rawDestination);
         if (!parsed) return match;
 
-        const apiUrl = resolveLinkedFileUrl(parsed.target, fileLinks, vault, token);
-        if (!apiUrl) return match;
+        const resolvedPath = fileLinks[parsed.target.trim()];
+        if (!resolvedPath) return match;
+
+        const apiUrl = buildAttachmentApiUrl(vault, resolvedPath, token);
+        const attachmentType = resolveAttachmentType(resolvedPath.toLowerCase());
+
+        // Dispatch by extension so that `![alt](clip.mp4)` and
+        // `![alt](song.mp3)` actually play instead of rendering as a broken
+        // <img>. Mirrors how Obsidian's reading mode (and the share-flow
+        // server rewriter) treats markdown image syntax pointing at media.
+        // 按扩展名分发：让 `![alt](clip.mp4)` 与 `![alt](song.mp3)` 真的
+        // 播放，而不是渲染成坏掉的 <img>。这与 Obsidian 阅读模式以及分享
+        // 流程的服务端重写器对 Markdown 图片语法指向媒体文件的处理一致。
+        if (attachmentType === "video") {
+            const safeAlt = escapeHtmlAttribute(altText || resolvedPath);
+            return `<video src="${apiUrl}" controls preload="metadata" title="${safeAlt}"></video>`;
+        }
+        if (attachmentType === "audio") {
+            const safeAlt = escapeHtmlAttribute(altText || resolvedPath);
+            return `<audio src="${apiUrl}" controls preload="metadata" title="${safeAlt}"></audio>`;
+        }
 
         let replacementTarget = apiUrl;
         const originalTarget = rawDestination.slice(parsed.start, parsed.end);
@@ -596,6 +657,84 @@ function rewriteHtmlImageSources(content: string, fileLinks: Record<string, stri
         if (!apiUrl) return match;
         return `<img${beforeSrc}src=${quote}${apiUrl}${quote}${afterSrc}>`;
     });
+}
+
+/**
+ * Build a regex-driven rewriter for HTML media tags whose `src` attribute is
+ * declared on the tag itself (i.e. <video src=...>, <audio src=...>,
+ * <source src=...>). When the src refers to a file known via fileLinks (raw
+ * key, mirroring the server-side mapping), it is replaced with the resolved
+ * file API URL.
+ *
+ * 通用 HTML 媒体标签 src 重写器。处理 src 写在标签自身上的 <video>/<audio>/<source>，
+ * 当 src 命中 fileLinks（与服务端映射的原始键对应）时改写为已解析的文件 API URL。
+ */
+function buildHtmlMediaSourcesRewriter(
+    regex: RegExp,
+    tagName: string,
+): (content: string, fileLinks: Record<string, string>, vault: string, token: string) => string {
+    return (content, fileLinks, vault, token) =>
+        content.replace(regex, (match, beforeSrc: string, quote: string, rawSrc: string, afterSrc: string) => {
+            const apiUrl = resolveLinkedFileUrl(rawSrc, fileLinks, vault, token);
+            if (!apiUrl) return match;
+            // Preserve self-closing (used by some authors for void-style tags
+            // like `<source ... />`). The trailing `/` is captured inside
+            // `afterSrc` due to how the regex is anchored, so strip it from
+            // afterSrc and re-emit it explicitly to avoid double-slash output.
+            // 保留可能存在的自闭合形式（如 `<source ... />`）。结尾的 `/`
+            // 会被吸入 afterSrc，需要先剥掉再显式补上，避免出现双斜杠输出。
+            let cleanedAfter = afterSrc;
+            const isSelfClosing = /\/\s*$/.test(afterSrc);
+            if (isSelfClosing) {
+                cleanedAfter = afterSrc.replace(/\s*\/\s*$/, "");
+            }
+            const closing = isSelfClosing ? " />" : ">";
+            return `<${tagName}${beforeSrc}src=${quote}${apiUrl}${quote}${cleanedAfter}${closing}`;
+        });
+}
+
+const rewriteHtmlVideoSources = buildHtmlMediaSourcesRewriter(HTML_VIDEO_REGEX, "video");
+const rewriteHtmlAudioSources = buildHtmlMediaSourcesRewriter(HTML_AUDIO_REGEX, "audio");
+const rewriteHtmlSourceSources = buildHtmlMediaSourcesRewriter(HTML_SOURCE_REGEX, "source");
+
+/**
+ * Rewrite href on standard Markdown links `[text](url)` (no `!` prefix) when
+ * the target resolves through fileLinks. Mirrors Obsidian's reading view: the
+ * link stays clickable (it does NOT embed media), but it now points at a real
+ * file URL rather than an unreachable relative vault path.
+ *
+ * 重写标准 Markdown 超链接 `[text](url)`（不带 `!` 前缀）的 href：当目标在
+ * fileLinks 中可解析时，把链接指向真实的文件 API URL，行为与 Obsidian 阅读
+ * 视图一致——保持可点击、但不嵌入媒体。
+ */
+function rewriteMarkdownLinkHrefs(content: string, fileLinks: Record<string, string>, vault: string, token: string): string {
+    return content.replace(MARKDOWN_LINK_REGEX, (match, text: string, rawDestination: string) => {
+        const parsed = parseMarkdownLinkTarget(rawDestination);
+        if (!parsed) return match;
+
+        const apiUrl = resolveLinkedFileUrl(parsed.target, fileLinks, vault, token);
+        if (!apiUrl) return match;
+
+        let replacementTarget = apiUrl;
+        const originalTarget = rawDestination.slice(parsed.start, parsed.end);
+        if (originalTarget.startsWith("<") && originalTarget.endsWith(">")) {
+            replacementTarget = `<${replacementTarget}>`;
+        }
+
+        return `[${text}](${rawDestination.slice(0, parsed.start)}${replacementTarget}${rawDestination.slice(parsed.end)})`;
+    });
+}
+
+/**
+ * Encode value for safe inclusion as a double-quoted HTML attribute.
+ * 将值编码为可安全用于双引号 HTML 属性的形式。
+ */
+function escapeHtmlAttribute(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -651,7 +790,8 @@ export function transformObsidianSyntax(
         const apiUrl = shareId && shareToken
             ? buildShareFileApiUrl(shareId, shareToken, resolvedPath, password)
             : buildFileApiUrl(vault, resolvedPath, token);
-        const displayName = escapeMarkdownText((metaParts[0] || rawPath).trim());
+        const displayName = (metaParts[0] || rawPath).trim();
+        const escapedDisplay = escapeMarkdownText(displayName);
         const attachmentType = resolveAttachmentType(resolvedPath.toLowerCase());
 
         if (attachmentType === "image") {
@@ -659,20 +799,48 @@ export function transformObsidianSyntax(
             if (widthMatch) {
                 return `<img src="${apiUrl}" alt="${rawPath}" width="${widthMatch[1]}" />`;
             }
-            return `![${displayName}](${apiUrl})`;
+            return `![${escapedDisplay}](${apiUrl})`;
         }
+        // Embed media as proper HTML players. Previously we emitted a markdown
+        // link with a leading emoji and relied on the <a> renderer's
+        // auto-embed; that auto-embed has been removed (so plain `[](mp4)`
+        // links stay clickable, matching Obsidian) which means wiki embeds
+        // must produce real <video>/<audio> tags themselves.
+        // 把媒体文件嵌入为正式的 HTML 播放器。此前是发出带 emoji 前缀的
+        // Markdown 链接、依赖 <a> 组件的自动嵌入；为了与 Obsidian 一致地把
+        // 普通 `[](mp4)` 当作可点击链接，自动嵌入逻辑已移除，因此 wiki 形式
+        // 的嵌入必须自己生成 <video>/<audio>。
         if (attachmentType === "video") {
-            return `[🎬 ${displayName}](${apiUrl})`;
+            const safeTitle = escapeHtmlAttribute(displayName);
+            return `<video src="${apiUrl}" controls preload="metadata" title="${safeTitle}"></video>`;
         }
         if (attachmentType === "audio") {
-            return `[🎵 ${displayName}](${apiUrl})`;
+            const safeTitle = escapeHtmlAttribute(displayName);
+            return `<audio src="${apiUrl}" controls preload="metadata" title="${safeTitle}"></audio>`;
         }
-        return `[📎 ${displayName}](${apiUrl})`;
+        return `[📎 ${escapedDisplay}](${apiUrl})`;
     });
 
-    // 3. Rewrite standard Markdown and HTML image sources with resolved file API URLs.
+    // 3. Rewrite standard Markdown and HTML attachment sources with resolved
+    //    file API URLs. Order matters: rewriteMarkdownImageLinks may emit
+    //    HTML <video>/<audio> for media files which must then survive the
+    //    HTML rewriters (the freshly-emitted URLs come from this very flow,
+    //    so they will not match raw fileLinks keys and pass through unchanged).
+    // 3. 用解析过的文件 API URL 重写标准 Markdown 与 HTML 附件源。注意顺序：
+    //    rewriteMarkdownImageLinks 对媒体文件会发出 HTML <video>/<audio>，这些
+    //    标签随后必须能完整通过 HTML 重写器（新发出的 URL 由本流程生成、不会
+    //    再命中原始 fileLinks 键，因此会原样通过）。
     result = rewriteMarkdownImageLinks(result, fileLinks, vault, token);
     result = rewriteHtmlImageSources(result, fileLinks, vault, token);
+    result = rewriteHtmlVideoSources(result, fileLinks, vault, token);
+    result = rewriteHtmlAudioSources(result, fileLinks, vault, token);
+    result = rewriteHtmlSourceSources(result, fileLinks, vault, token);
+    // 3b. Rewrite href on standard Markdown links `[text](path)`. Done after
+    //     image rewriting so the negative-lookbehind regex never sees a `!`
+    //     that has just been turned into an HTML tag.
+    // 3b. 重写标准 Markdown 链接 `[text](path)` 的 href；放在图片重写之后，
+    //     使带否定前向断言的正则不会误命中刚被转换成 HTML 标签的 `!`。
+    result = rewriteMarkdownLinkHrefs(result, fileLinks, vault, token);
 
     // 4. [[page]] wiki link -> <span class="obsidian-wiki-link">
     result = result.replace(/\[\[([^\]]+)\]\]/g, (_, inner: string) => {
@@ -880,16 +1048,30 @@ const markdownComponents: Components = {
             {...props}
         />
     ),
+    video: ({ node: _node, className, ...props }) => (
+        <video
+            className={cn("my-4 w-full rounded-lg border border-border/60", className)}
+            controls
+            preload="metadata"
+            {...props}
+        />
+    ),
+    audio: ({ node: _node, className, ...props }) => (
+        <audio
+            className={cn("my-4 w-full", className)}
+            controls
+            preload="metadata"
+            {...props}
+        />
+    ),
     a: ({ node: _node, href, children, className, ...props }) => {
-        const attachmentType = resolveAttachmentType(parseAttachmentPathFromHref(href));
-
-        if (href && attachmentType === "video") {
-            return <video src={href} controls className="my-4 w-full rounded-lg border border-border/60" />;
-        }
-        if (href && attachmentType === "audio") {
-            return <audio src={href} controls className="my-4 w-full" />;
-        }
-
+        // Match Obsidian's reading view: `[text](video.mp4)` is a clickable
+        // link, not an embedded player. Embeds use `![[ ]]` or `![](...)`
+        // syntax (or raw <video>/<audio> HTML), all of which are converted
+        // upstream in transformObsidianSyntax.
+        // 与 Obsidian 阅读视图一致：`[text](video.mp4)` 是可点击链接、不嵌入
+        // 播放器。嵌入由 `![[ ]]`、`![](...)` 或原生 <video>/<audio> 完成，
+        // 它们都在 transformObsidianSyntax 上游被处理。
         return (
             <a
                 href={href}
