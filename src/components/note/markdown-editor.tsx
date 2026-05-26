@@ -146,7 +146,7 @@ const OBSIDIAN_SANITIZE_SCHEMA = {
     ],
     attributes: {
         ...(defaultSchema.attributes ?? {}),
-        span: [...(defaultSchema.attributes?.span ?? []), "className", "title"],
+        span: [...(defaultSchema.attributes?.span ?? []), "className", "title", "style"],
         img: [...(defaultSchema.attributes?.img ?? []), "width"],
         // Whitelist of safe presentation/playback attributes only — no event
         // handlers (onload/onerror/etc) and no scriptable URLs because the
@@ -614,24 +614,78 @@ function resolveLinkedFileUrl(rawTarget: string, fileLinks: Record<string, strin
     return buildAttachmentApiUrl(vault, resolvedPath, token);
 }
 
+/**
+ * Check if a path looks like a remote/absolute URL that shouldn't be treated
+ * as a local vault attachment (and therefore shouldn't receive a missing-file
+ * placeholder when it doesn't resolve through fileLinks).
+ *
+ * 判断路径是否为远程/绝对 URL（不应被当作本地 vault 附件，即使未命中
+ * fileLinks 也不应显示"找不到附件"占位符）。
+ */
+function isRemotePath(ref: string): boolean {
+    const lower = ref.trim().toLowerCase();
+    return (
+        lower.startsWith("http://") ||
+        lower.startsWith("https://") ||
+        lower.startsWith("//") ||
+        lower.startsWith("data:") ||
+        lower.startsWith("mailto:") ||
+        lower.startsWith("tel:") ||
+        lower.startsWith("obsidian://") ||
+        lower.startsWith("#")
+    );
+}
+
+/**
+ * Generate a styled inline HTML placeholder for an attachment that could not
+ * be resolved through fileLinks. The label varies by detected media type so
+ * users can quickly identify what kind of file is missing.
+ *
+ * 为未能通过 fileLinks 解析的附件生成带样式的内联 HTML 占位符。标签会根据
+ * 检测到的媒体类型变化，方便用户快速识别缺少的是哪种文件。
+ */
+function buildMissingAttachmentHtml(rawPath: string): string {
+    const type = resolveAttachmentType(rawPath.toLowerCase());
+    let label: string;
+    switch (type) {
+        case "image":
+            label = "[图片找不到]";
+            break;
+        case "video":
+            label = "[视频找不到]";
+            break;
+        case "audio":
+            label = "[音频找不到]";
+            break;
+        default:
+            label = "[附件找不到]";
+            break;
+    }
+    const safePath = escapeHtmlAttribute(rawPath);
+    return `<span style="display:inline-block;padding:4px 10px;margin:4px 0;border:1px dashed #e5534b;border-radius:6px;background:#fff1f0;color:#cf222e;font-size:13px" title="${safePath}">${label} ${safePath}</span>`;
+}
+
 function rewriteMarkdownImageLinks(content: string, fileLinks: Record<string, string>, vault: string, token: string): string {
     return content.replace(MARKDOWN_IMAGE_REGEX, (match, altText: string, rawDestination: string) => {
         const parsed = parseMarkdownLinkTarget(rawDestination);
         if (!parsed) return match;
 
-        const resolvedPath = fileLinks[parsed.target.trim()];
-        if (!resolvedPath) return match;
+        const target = parsed.target.trim();
+        const resolvedPath = fileLinks[target];
+
+        // If path doesn't resolve and looks like a local vault path, show a
+        // "missing attachment" placeholder so users can identify the issue
+        // instead of seeing a broken <img> or empty space.
+        // 如果路径未解析且看起来是本地 vault 路径，显示"找不到附件"占位符，
+        // 让用户能直观发现问题，而不是看到裂开的 <img> 或空白。
+        if (!resolvedPath) {
+            if (isRemotePath(target)) return match;
+            return buildMissingAttachmentHtml(target);
+        }
 
         const apiUrl = buildAttachmentApiUrl(vault, resolvedPath, token);
         const attachmentType = resolveAttachmentType(resolvedPath.toLowerCase());
 
-        // Dispatch by extension so that `![alt](clip.mp4)` and
-        // `![alt](song.mp3)` actually play instead of rendering as a broken
-        // <img>. Mirrors how Obsidian's reading mode (and the share-flow
-        // server rewriter) treats markdown image syntax pointing at media.
-        // 按扩展名分发：让 `![alt](clip.mp4)` 与 `![alt](song.mp3)` 真的
-        // 播放，而不是渲染成坏掉的 <img>。这与 Obsidian 阅读模式以及分享
-        // 流程的服务端重写器对 Markdown 图片语法指向媒体文件的处理一致。
         if (attachmentType === "video") {
             const safeAlt = escapeHtmlAttribute(altText || resolvedPath);
             return `<video src="${apiUrl}" controls preload="metadata" title="${safeAlt}"></video>`;
@@ -786,13 +840,22 @@ export function transformObsidianSyntax(
         const rawPath = rawTarget.split("#")[0].trim();
         if (!rawPath) return match;
 
-        const resolvedPath = fileLinks[rawPath] || rawPath;
+        const resolvedPath = fileLinks[rawPath];
+
+        // If path doesn't resolve through fileLinks and looks local, show
+        // a missing-attachment placeholder.
+        // 如果路径未通过 fileLinks 解析且为本地路径，显示找不到附件占位符。
+        if (!resolvedPath && !isRemotePath(rawPath)) {
+            return buildMissingAttachmentHtml(rawPath);
+        }
+
+        const finalPath = resolvedPath || rawPath;
         const apiUrl = shareId && shareToken
-            ? buildShareFileApiUrl(shareId, shareToken, resolvedPath, password)
-            : buildFileApiUrl(vault, resolvedPath, token);
+            ? buildShareFileApiUrl(shareId, shareToken, finalPath, password)
+            : buildFileApiUrl(vault, finalPath, token);
         const displayName = (metaParts[0] || rawPath).trim();
         const escapedDisplay = escapeMarkdownText(displayName);
-        const attachmentType = resolveAttachmentType(resolvedPath.toLowerCase());
+        const attachmentType = resolveAttachmentType(finalPath.toLowerCase());
 
         if (attachmentType === "image") {
             const widthMatch = metaParts[0]?.match(/^(\d+)$/);
