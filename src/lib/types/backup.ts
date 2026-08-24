@@ -57,3 +57,20 @@ export interface BackupConfigRequest {
 export interface BackupExecuteRequest {
     id: number;
 }
+
+export interface BackupImportRequest {
+    vault: string;
+    password?: string;
+    includeNotes: boolean;
+    includeVaultConfig: boolean;
+    includeNoteHistory: boolean;
+}
+
+export interface BackupImportResult {
+    notes: number;
+    files: number;
+    settings: number;
+    noteHistory: number;
+    skippedHistory?: number;
+    vault: string;
+}

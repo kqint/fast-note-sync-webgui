@@ -1,4 +1,4 @@
-import { BackupConfig, BackupHistory, BackupConfigRequest } from "@/lib/types/backup";
+import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportResult } from "@/lib/types/backup";
 import { useConfirmDialog } from "@/components/context/confirm-dialog-context";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
 import { buildApiHeaders } from "@/lib/utils/api-headers";
@@ -120,6 +120,34 @@ export function useBackupHandle() {
     }, [token, openConfirmDialog, t])
 
     /**
+     * 导入备份包（覆盖策略）
+     */
+    const handleBackupImport = useCallback(async (formData: FormData, callback?: (data: BackupImportResult) => void) => {
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/backup/import"), {
+                method: "POST",
+                body: formData,
+                headers: buildApiHeaders({ token, includeContentType: false }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (callback && res.data) {
+                    callback(res.data)
+                }
+            } else {
+                openConfirmDialog(res.message + ": " + (res.details || ""), "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.error") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
+    /**
      * 获取备份历史记录
      */
     const handleBackupHistory = useCallback(async (page: number, pageSize: number, configId: number, callback?: (data: { list: BackupHistory[], total: number }) => void) => {
@@ -163,11 +191,13 @@ export function useBackupHandle() {
         handleBackupConfigUpdate,
         handleBackupExecute,
         handleBackupHistory,
+        handleBackupImport,
     }), [
         handleBackupConfigList,
         handleBackupConfigDelete,
         handleBackupConfigUpdate,
         handleBackupExecute,
         handleBackupHistory,
+        handleBackupImport,
     ])
 }

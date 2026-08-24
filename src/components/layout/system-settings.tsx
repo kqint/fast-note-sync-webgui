@@ -1,5 +1,5 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
-import { GitBranch, UserPlus, HardDrive, Trash2, Clock, Shield, Loader2, Type, Lock, Save, HelpCircle, Github, Send, RefreshCw, Cpu, Download, Globe, Database, ChevronLeft, ChevronRight, SlidersHorizontal, BookOpen, Share2, Zap, Router, Eye, EyeOff, Plus, Sliders, Cog } from "lucide-react";
+import { GitBranch, UserPlus, HardDrive, Trash2, Clock, Shield, Loader2, Type, Lock, Save, HelpCircle, Github, Send, RefreshCw, Cpu, Download, Globe, Database, ChevronLeft, ChevronRight, SlidersHorizontal, BookOpen, Share2, Zap, Router, Eye, EyeOff, Plus, Sliders, Cog, DatabaseBackup, UploadCloud, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
@@ -115,6 +115,12 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
     const [showDbPassword, setShowDbPassword] = useState(false)
     const [activeTab, setActiveTab] = useState("font")
     const [headersList, setHeadersList] = useState<{ id: string; key: string; value: string }[]>([])
+    // 设置备份与导入状态
+    const [isConfigExporting, setIsConfigExporting] = useState(false)
+    const [configImportFile, setConfigImportFile] = useState<File | null>(null)
+    const [isConfigImporting, setIsConfigImporting] = useState(false)
+    const [configImportCountdown, setConfigImportCountdown] = useState(5)
+    const configImportFileRef = useRef<HTMLInputElement>(null)
 
     const addHeaderRow = () => {
         setHeadersList(prev => [
@@ -404,6 +410,80 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
             toast.error(t("api.system.gc.error"))
         } finally {
             setIsGCing(false)
+        }
+    }
+
+    // 导出服务端配置文件 (config/config.yaml)
+    const handleConfigExport = async () => {
+        setIsConfigExporting(true)
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/admin/config/export"), {
+                headers: buildApiHeaders({
+                    token,
+                    includeDomain: false,
+                    includeContentType: false,
+                }),
+            })
+            if (!response.ok) throw new Error(`HTTP ${response.status}`)
+            const blob = await response.blob()
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement("a")
+            link.href = url
+            link.download = "config.yaml"
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+            toast.success(t("ui.settings.backup.exportSuccess"))
+        } catch {
+            toast.error(t("ui.settings.backup.exportError"))
+        } finally {
+            setIsConfigExporting(false)
+        }
+    }
+
+    // 强提醒：选择导入文件后 5 秒内禁止确认导入
+    useEffect(() => {
+        if (!configImportFile) return
+        setConfigImportCountdown(5)
+        const timer = setInterval(() => {
+            setConfigImportCountdown((prev) => (prev <= 1 ? 0 : prev - 1))
+        }, 1000)
+        return () => clearInterval(timer)
+    }, [configImportFile])
+
+    // 导入服务端配置文件（覆盖 config/config.yaml，重启后生效）
+    const handleConfigImport = async () => {
+        if (!configImportFile) return
+        setIsConfigImporting(true)
+        try {
+            const formData = new FormData()
+            formData.append("file", configImportFile)
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/admin/config/import"), {
+                method: "POST",
+                body: formData,
+                headers: buildApiHeaders({
+                    token,
+                    includeDomain: false,
+                    includeContentType: false,
+                }),
+            })
+            const res = await response.json()
+            if (res.code > 0 && res.code < 200 && res.status !== false) {
+                toast.success(t("ui.settings.backup.importSuccess"))
+                setConfigImportFile(null)
+                if (configImportFileRef.current) {
+                    configImportFileRef.current.value = ""
+                }
+                // 导入成功后提示重启以生效
+                setShowRestartConfirm(true)
+            } else {
+                toast.error(`${res.message || t("ui.settings.backup.importError")}${res.details ? `\n${res.details}` : ""}`)
+            }
+        } catch {
+            toast.error(t("ui.settings.backup.importError"))
+        } finally {
+            setIsConfigImporting(false)
         }
     }
 
@@ -736,6 +816,10 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                     <TabsTrigger value="advanced" className="flex-none px-6 h-12 rounded-none border-y-transparent border-r-transparent border-l-transparent bg-transparent data-[state=active]:bg-card transition-all font-medium text-muted-foreground data-[state=active]:text-primary">
                                         <Cog className="h-4 w-4 mr-2" />
                                         {t("ui.settings.advancedConfig")}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="backup" className="flex-none px-6 h-12 rounded-none border-y-transparent border-r-transparent border-l-transparent bg-transparent data-[state=active]:bg-card transition-all font-medium text-muted-foreground data-[state=active]:text-primary">
+                                        <DatabaseBackup className="h-4 w-4 mr-2" />
+                                        {t("ui.settings.backup.tab")}
                                     </TabsTrigger>
                                 </TabsList>
                                 {showRightScroll && (
@@ -1456,6 +1540,75 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                                 <><Save className="h-4 w-4 mr-2" />{t("ui.settings.saveSettings")}</>
                                             )}
                                         </Button>
+                                    </div>
+                                </TabsContent>
+
+                                {/* 备份与导入 */}
+                                <TabsContent value="backup" className="p-6 space-y-5 mt-0 outline-none">
+                                    <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
+                                        <DatabaseBackup className="h-5 w-5" />
+                                        {t("ui.settings.backup.tab")}
+                                    </h2>
+
+                                    {/* 设置备份 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <Download className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.exportTitle")}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground whitespace-pre-line">{t("ui.settings.backup.exportDesc")}</p>
+                                        <Button onClick={handleConfigExport} disabled={isConfigExporting} className="rounded-xl">
+                                            {isConfigExporting ? (
+                                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                            ) : (
+                                                <><Download className="h-4 w-4 mr-2" />{t("ui.settings.backup.exportAction")}</>
+                                            )}
+                                        </Button>
+                                    </div>
+
+                                    <div className="border-t border-border" />
+
+                                    {/* 设置导入 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <UploadCloud className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.importTitle")}</span>
+                                        </div>
+                                        <div className="flex items-start gap-3 p-3 rounded-xl border border-destructive/40 bg-destructive/10">
+                                            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                                            <div className="text-sm">
+                                                <p className="font-semibold text-destructive">{t("ui.settings.backup.importWarningTitle")}</p>
+                                                <p className="text-xs text-destructive/80 mt-1">{t("ui.settings.backup.importWarningDesc")}</p>
+                                            </div>
+                                        </div>
+                                        <Input
+                                            ref={configImportFileRef}
+                                            type="file"
+                                            accept=".yaml,.yml,.txt"
+                                            onChange={(e) => setConfigImportFile(e.target.files?.[0] ?? null)}
+                                            className="rounded-xl"
+                                        />
+                                        {configImportFile && (
+                                            configImportCountdown > 0 ? (
+                                                <Button variant="destructive" disabled className="rounded-xl">
+                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin opacity-70" />
+                                                    {t("ui.settings.backup.importConfirmIn", { seconds: configImportCountdown })}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="destructive"
+                                                    disabled={isConfigImporting}
+                                                    onClick={handleConfigImport}
+                                                    className="rounded-xl"
+                                                >
+                                                    {isConfigImporting ? (
+                                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                                    ) : (
+                                                        <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.settings.backup.importConfirm")}</>
+                                                    )}
+                                                </Button>
+                                            )
+                                        )}
                                     </div>
                                 </TabsContent>
                             </div>
