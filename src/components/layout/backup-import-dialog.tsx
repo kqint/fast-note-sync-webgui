@@ -1,8 +1,9 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CountdownConfirmDialog } from "@/components/common/countdown-confirm-dialog";
 import { useBackupHandle } from "@/components/api-handle/backup-handle";
 import { useVaultHandle } from "@/components/api-handle/vault-handle";
-import { BackupImportResult } from "@/lib/types/backup";
+import { BackupImportResult, BackupImportValidateInfo } from "@/lib/types/backup";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -29,8 +30,9 @@ interface BackupImportDialogProps {
 
 /**
  * 备份包导入对话框
- * 三个复选框：1) 笔记和附件 2) 仓库配置 3) 笔记历史（需勾选选项1）
- * 覆盖策略：同名内容全部被备份包覆盖；导入按钮带 5 秒强提醒倒计时
+ * 三个复选框：1) 笔记和附件 2) 仓库配置 3) 笔记历史（依赖选项1，联动取消）
+ * 覆盖策略：同名内容全部被备份包覆盖
+ * 零信任校验：备份包缺少所选内容时弹窗选择「仅导入存在的部分」或「放弃导入」
  */
 export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogProps) {
     const { t } = useTranslation();
@@ -45,19 +47,10 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
     const [includeVaultConfig, setIncludeVaultConfig] = useState(false);
     const [includeNoteHistory, setIncludeNoteHistory] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
-    const [confirmCountdown, setConfirmCountdown] = useState(5);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [partialInfo, setPartialInfo] = useState<BackupImportValidateInfo | null>(null);
     const [result, setResult] = useState<BackupImportResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // 强提醒：对话框打开后 5 秒内禁止确认导入
-    useEffect(() => {
-        if (!open) return;
-        setConfirmCountdown(5);
-        const timer = setInterval(() => {
-            setConfirmCountdown((prev) => (prev <= 1 ? 0 : prev - 1));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, [open]);
 
     useEffect(() => {
         if (open) {
@@ -78,29 +71,73 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
         setIncludeVaultConfig(false);
         setIncludeNoteHistory(false);
         setIsImporting(false);
+        setShowConfirm(false);
+        setPartialInfo(null);
         setResult(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
     }, []);
 
-    const canSubmit = Boolean(vault && file && confirmCountdown === 0 && !isImporting);
+    // 选项有效性：勾选笔记历史必须同时勾选笔记和附件（服务端同样校验）
+    const optionsValid = includeNoteHistory ? includeNotes : true;
+    const canSubmit = Boolean(vault && file && optionsValid && !isImporting);
 
-    const onConfirmImport = async () => {
-        if (!vault || !file) return;
-        setIsImporting(true);
+    const buildFormData = (flags: { notes: boolean; vaultConfig: boolean; history: boolean }, allowPartial: boolean): FormData => {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", file!);
         formData.append("vault", vault);
         formData.append("password", password);
-        formData.append("includeNotes", String(includeNotes));
-        formData.append("includeVaultConfig", String(includeVaultConfig));
-        formData.append("includeNoteHistory", String(includeNotes && includeNoteHistory));
-        await handleBackupImport(formData, (data: BackupImportResult) => {
+        formData.append("includeNotes", String(flags.notes));
+        formData.append("includeVaultConfig", String(flags.vaultConfig));
+        formData.append("includeNoteHistory", String(flags.history));
+        formData.append("allowPartial", String(allowPartial));
+        return formData;
+    };
+
+    const doImport = async (
+        allowPartial: boolean,
+        flagsOverride?: { notes: boolean; vaultConfig: boolean; history: boolean },
+    ) => {
+        if (!file || !vault) return;
+        // 笔记历史依赖笔记和附件（服务端同样校验）
+        const flags = flagsOverride ?? {
+            notes: includeNotes,
+            vaultConfig: includeVaultConfig,
+            history: includeNotes && includeNoteHistory,
+        };
+        setIsImporting(true);
+        setShowConfirm(false);
+        await handleBackupImport(buildFormData(flags, allowPartial), (data: BackupImportResult) => {
             setResult(data);
+            setPartialInfo(null);
             toast.success(t("api.backup.import.success"));
+        }, (data: BackupImportValidateInfo) => {
+            setPartialInfo(data);
         });
         setIsImporting(false);
+    };
+
+    // 「仅导入部分」：按备份包实际存在的内容修正勾选后重新提交
+    const confirmPartialImport = () => {
+        if (!partialInfo) return;
+        const avail = partialInfo.available;
+        const nextFlags = {
+            notes: includeNotes && avail.notes,
+            vaultConfig: includeVaultConfig && avail.vaultConfig,
+            history: includeNoteHistory && avail.notes && avail.noteHistory,
+        };
+        setPartialInfo(null);
+        // 修正后没有任何可导入内容，放弃导入
+        if (!nextFlags.notes && !nextFlags.vaultConfig && !nextFlags.history) {
+            toast.error(t("ui.backup.import.partial.nothing"));
+            return;
+        }
+        // 同步 UI 勾选状态
+        setIncludeNotes(nextFlags.notes);
+        setIncludeVaultConfig(nextFlags.vaultConfig);
+        setIncludeNoteHistory(nextFlags.history);
+        void doImport(true, nextFlags);
     };
 
     return (
@@ -191,7 +228,17 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                         <div className="space-y-2.5 p-4 rounded-xl border border-border bg-muted/20">
                             <p className="text-xs font-semibold text-muted-foreground">{t("ui.backup.import.scope")}</p>
                             <label className="flex items-center gap-3 cursor-pointer">
-                                <Checkbox checked={includeNotes} onCheckedChange={(v) => setIncludeNotes(Boolean(v))} />
+                                <Checkbox
+                                    checked={includeNotes}
+                                    onCheckedChange={(v) => {
+                                        const checked = Boolean(v);
+                                        setIncludeNotes(checked);
+                                        // 取消笔记和附件时联动取消笔记历史
+                                        if (!checked) {
+                                            setIncludeNoteHistory(false);
+                                        }
+                                    }}
+                                />
                                 <FileUp className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm">{t("ui.backup.import.option.notes")}</span>
                             </label>
@@ -216,33 +263,60 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                             </label>
                         </div>
 
-                        {/* 导入按钮 */}
-                        <div className="space-y-2 pt-1">
-                            {confirmCountdown > 0 ? (
-                                <Button variant="destructive" disabled className="w-full rounded-xl">
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin opacity-70" />
-                                    {t("ui.backup.import.confirmIn", { seconds: confirmCountdown })}
-                                </Button>
+                        {!optionsValid && (
+                            <p className="text-xs text-destructive">{t("ui.backup.import.option.noteHistoryDepends")}</p>
+                        )}
+
+                        {/* 导入按钮：点击后弹出 3 秒倒计时确认小窗 */}
+                        <Button
+                            variant="destructive"
+                            disabled={!canSubmit}
+                            onClick={() => setShowConfirm(true)}
+                            className="w-full rounded-xl"
+                        >
+                            {isImporting ? (
+                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
                             ) : (
-                                <Button
-                                    variant="destructive"
-                                    disabled={!canSubmit}
-                                    onClick={onConfirmImport}
-                                    className="w-full rounded-xl"
-                                >
-                                    {isImporting ? (
-                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
-                                    ) : (
-                                        <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.backup.import.confirm")}</>
-                                    )}
-                                </Button>
+                                <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.backup.import.start")}</>
                             )}
-                            {!file && (
-                                <p className="text-[11px] text-center text-muted-foreground">{t("ui.backup.import.selectFileFirst")}</p>
-                            )}
-                        </div>
+                        </Button>
+                        {!file && (
+                            <p className="text-[11px] text-center text-muted-foreground">{t("ui.backup.import.selectFileFirst")}</p>
+                        )}
                     </div>
                 )}
+
+                {/* 3 秒倒计时确认小窗 */}
+                <CountdownConfirmDialog
+                    open={showConfirm}
+                    onOpenChange={setShowConfirm}
+                    title={t("ui.backup.import.confirm.title")}
+                    description={t("ui.backup.import.confirm.desc")}
+                    confirmLabel={t("ui.backup.import.confirm.button")}
+                    seconds={3}
+                    loading={isImporting}
+                    onConfirm={() => void doImport(false)}
+                />
+
+                {/* 零信任校验：缺少所选内容时选择部分导入或放弃 */}
+                <CountdownConfirmDialog
+                    open={Boolean(partialInfo)}
+                    onOpenChange={(next) => !next && setPartialInfo(null)}
+                    title={t("ui.backup.import.partial.title")}
+                    description={
+                        partialInfo
+                            ? t("ui.backup.import.partial.desc", {
+                                  missing: partialInfo.missing
+                                      .map((key) => t(`ui.backup.import.section.${key}`))
+                                      .join(t("ui.backup.import.partial.joiner")),
+                              })
+                            : ""
+                    }
+                    confirmLabel={t("ui.backup.import.partial.confirm")}
+                    seconds={3}
+                    loading={isImporting}
+                    onConfirm={confirmPartialImport}
+                />
             </DialogContent>
         </Dialog>
     );

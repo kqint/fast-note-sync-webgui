@@ -1,4 +1,4 @@
-import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportResult } from "@/lib/types/backup";
+import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportResult, BackupImportValidateInfo } from "@/lib/types/backup";
 import { useConfirmDialog } from "@/components/context/confirm-dialog-context";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
 import { buildApiHeaders } from "@/lib/utils/api-headers";
@@ -121,8 +121,13 @@ export function useBackupHandle() {
 
     /**
      * 导入备份包（覆盖策略）
+     * onPartial: 备份包缺少所选内容（服务端 code 545）时回调，携带可用部分信息
      */
-    const handleBackupImport = useCallback(async (formData: FormData, callback?: (data: BackupImportResult) => void) => {
+    const handleBackupImport = useCallback(async (
+        formData: FormData,
+        callback?: (data: BackupImportResult) => void,
+        onPartial?: (data: BackupImportValidateInfo) => void,
+    ) => {
         try {
             const response = await fetch(addCacheBuster(env.API_URL + "/api/backup/import"), {
                 method: "POST",
@@ -139,6 +144,8 @@ export function useBackupHandle() {
                 if (callback && res.data) {
                     callback(res.data)
                 }
+            } else if (res.code === 545 && onPartial && res.data) {
+                onPartial(res.data)
             } else {
                 openConfirmDialog(res.message + ": " + (res.details || ""), "error")
             }

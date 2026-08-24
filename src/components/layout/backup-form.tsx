@@ -10,7 +10,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, History } from "lucide-react";
 import { VaultType } from "@/lib/types/vault";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -159,6 +159,12 @@ export function BackupForm({ config, storages, onSubmit, onCancel }: BackupFormP
                         </SelectContent>
                     </Select>
                     {errors.type && <p className="text-[11px] text-destructive mt-1 ml-1">{errors.type.message}</p>}
+                    {watch("type") === "full" && (
+                        <div className="flex items-center gap-1.5 mt-1 ml-1">
+                            <History className="h-3.5 w-3.5 text-blue-500" />
+                            <p className="text-[11px] text-blue-600 dark:text-blue-400">{t("ui.backup.fullHistoryHint")}</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* 仅在同步备份时显示：包含仓库名选项 */}

@@ -23,6 +23,7 @@ import { SupportList } from "./support-list";
 import { Overview } from "./overview";
 import { UserManagment } from "./user-managment";
 import { SourceProbePanel } from "./source-probe-panel";
+import { CountdownConfirmDialog } from "@/components/common/countdown-confirm-dialog";
 
 
 interface SystemConfig {
@@ -119,7 +120,7 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
     const [isConfigExporting, setIsConfigExporting] = useState(false)
     const [configImportFile, setConfigImportFile] = useState<File | null>(null)
     const [isConfigImporting, setIsConfigImporting] = useState(false)
-    const [configImportCountdown, setConfigImportCountdown] = useState(5)
+    const [showConfigImportConfirm, setShowConfigImportConfirm] = useState(false)
     const configImportFileRef = useRef<HTMLInputElement>(null)
 
     const addHeaderRow = () => {
@@ -441,16 +442,6 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
             setIsConfigExporting(false)
         }
     }
-
-    // 强提醒：选择导入文件后 5 秒内禁止确认导入
-    useEffect(() => {
-        if (!configImportFile) return
-        setConfigImportCountdown(5)
-        const timer = setInterval(() => {
-            setConfigImportCountdown((prev) => (prev <= 1 ? 0 : prev - 1))
-        }, 1000)
-        return () => clearInterval(timer)
-    }, [configImportFile])
 
     // 导入服务端配置文件（覆盖 config/config.yaml，重启后生效）
     const handleConfigImport = async () => {
@@ -1589,36 +1580,41 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             className="rounded-xl"
                                         />
                                         {configImportFile && (
-                                            configImportCountdown > 0 ? (
-                                                <Button variant="destructive" disabled className="rounded-xl">
-                                                    <Loader2 className="h-4 w-4 mr-2 animate-spin opacity-70" />
-                                                    {t("ui.settings.backup.importConfirmIn", { seconds: configImportCountdown })}
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    variant="destructive"
-                                                    disabled={isConfigImporting}
-                                                    onClick={handleConfigImport}
-                                                    className="rounded-xl"
-                                                >
-                                                    {isConfigImporting ? (
-                                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
-                                                    ) : (
-                                                        <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.settings.backup.importConfirm")}</>
-                                                    )}
-                                                </Button>
-                                            )
+                                            <Button
+                                                variant="destructive"
+                                                disabled={isConfigImporting}
+                                                onClick={() => setShowConfigImportConfirm(true)}
+                                                className="rounded-xl"
+                                            >
+                                                {isConfigImporting ? (
+                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                                ) : (
+                                                    <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.settings.backup.importAction")}</>
+                                                )}
+                                            </Button>
                                         )}
-                                    </div>
-                                </TabsContent>
-                            </div>
-                        </Tabs>
-                    </div>
-                ) : null}
+                                     </div>
+                                 </TabsContent>
+                             </div>
+                         </Tabs>
+                     </div>
+                 ) : null}
 
-            </div>
-        </div>
-    )
-}
+                {/* 设置导入 3 秒倒计时确认小窗 */}
+                <CountdownConfirmDialog
+                    open={showConfigImportConfirm}
+                    onOpenChange={setShowConfigImportConfirm}
+                    title={t("ui.settings.backup.importWarningTitle")}
+                    description={t("ui.settings.backup.importWarningDesc")}
+                    confirmLabel={t("ui.settings.backup.importConfirm")}
+                    seconds={3}
+                    loading={isConfigImporting}
+                    onConfirm={handleConfigImport}
+                />
+
+             </div>
+         </div>
+     )
+ }
 
 export default SystemSettings

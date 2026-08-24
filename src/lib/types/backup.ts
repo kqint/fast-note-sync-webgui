@@ -74,3 +74,15 @@ export interface BackupImportResult {
     skippedHistory?: number;
     vault: string;
 }
+
+export interface BackupImportAvailability {
+    notes: boolean;
+    vaultConfig: boolean;
+    noteHistory: boolean;
+}
+
+export interface BackupImportValidateInfo {
+    available: BackupImportAvailability;
+    missing: string[];
+    sourceVault?: string;
+}
