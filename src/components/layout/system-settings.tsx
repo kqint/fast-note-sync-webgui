@@ -24,6 +24,7 @@ import { Overview } from "./overview";
 import { UserManagment } from "./user-managment";
 import { SourceProbePanel } from "./source-probe-panel";
 import { CountdownConfirmDialog } from "@/components/common/countdown-confirm-dialog";
+import { FileDropzone } from "@/components/common/file-dropzone";
 
 
 interface SystemConfig {
@@ -121,7 +122,6 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
     const [configImportFile, setConfigImportFile] = useState<File | null>(null)
     const [isConfigImporting, setIsConfigImporting] = useState(false)
     const [showConfigImportConfirm, setShowConfigImportConfirm] = useState(false)
-    const configImportFileRef = useRef<HTMLInputElement>(null)
 
     const addHeaderRow = () => {
         setHeadersList(prev => [
@@ -463,9 +463,6 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
             if (res.code > 0 && res.code < 200 && res.status !== false) {
                 toast.success(t("ui.settings.backup.importSuccess"))
                 setConfigImportFile(null)
-                if (configImportFileRef.current) {
-                    configImportFileRef.current.value = ""
-                }
                 // 导入成功后提示重启以生效
                 setShowRestartConfirm(true)
             } else {
@@ -1572,12 +1569,11 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                                 <p className="text-xs text-destructive/80 mt-1">{t("ui.settings.backup.importWarningDesc")}</p>
                                             </div>
                                         </div>
-                                        <Input
-                                            ref={configImportFileRef}
-                                            type="file"
+                                        <FileDropzone
+                                            value={configImportFile}
+                                            onChange={setConfigImportFile}
                                             accept=".yaml,.yml,.txt"
-                                            onChange={(e) => setConfigImportFile(e.target.files?.[0] ?? null)}
-                                            className="rounded-xl"
+                                            placeholder={t("ui.settings.backup.dropzone.placeholder")}
                                         />
                                         {configImportFile && (
                                             <Button

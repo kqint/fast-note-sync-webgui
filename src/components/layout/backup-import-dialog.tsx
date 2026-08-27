@@ -1,6 +1,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CountdownConfirmDialog } from "@/components/common/countdown-confirm-dialog";
+import { FileDropzone } from "@/components/common/file-dropzone";
 import { useBackupHandle } from "@/components/api-handle/backup-handle";
 import { useVaultHandle } from "@/components/api-handle/vault-handle";
 import { BackupImportResult, BackupImportValidateInfo } from "@/lib/types/backup";
@@ -20,7 +21,7 @@ import {
     ShieldCheck,
     UploadCloud,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface BackupImportDialogProps {
@@ -28,11 +29,20 @@ interface BackupImportDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
+/** 将备份包"已有部分"布尔集合转为部分键列表（notes/vaultConfig/noteHistory） */
+function availableSectionNames(available: BackupImportValidateInfo["available"]): string[] {
+    const keys: string[] = [];
+    if (available.notes) keys.push("notes");
+    if (available.vaultConfig) keys.push("vaultConfig");
+    if (available.noteHistory) keys.push("noteHistory");
+    return keys;
+}
+
 /**
  * 备份包导入对话框
  * 三个复选框：1) 笔记和附件 2) 仓库配置 3) 笔记历史（依赖选项1，联动取消）
  * 覆盖策略：同名内容全部被备份包覆盖
- * 零信任校验：备份包缺少所选内容时弹窗选择「仅导入存在的部分」或「放弃导入」
+ * 零信任校验：备份包缺少所选内容时弹窗提示「已有/缺少」，可选择导入已有部分或取消本次导入
  */
 export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogProps) {
     const { t } = useTranslation();
@@ -50,7 +60,6 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
     const [showConfirm, setShowConfirm] = useState(false);
     const [partialInfo, setPartialInfo] = useState<BackupImportValidateInfo | null>(null);
     const [result, setResult] = useState<BackupImportResult | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (open) {
@@ -74,9 +83,6 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
         setShowConfirm(false);
         setPartialInfo(null);
         setResult(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
     }, []);
 
     // 选项有效性：勾选笔记历史必须同时勾选笔记和附件（服务端同样校验）
@@ -203,12 +209,11 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                         {/* 备份包文件 */}
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold text-muted-foreground ml-1">{t("ui.backup.import.file")}</Label>
-                            <Input
-                                ref={fileInputRef}
-                                type="file"
+                            <FileDropzone
+                                value={file}
+                                onChange={setFile}
                                 accept=".zip"
-                                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                                className="rounded-xl"
+                                placeholder={t("ui.backup.import.dropzone.placeholder")}
                             />
                         </div>
 
@@ -247,7 +252,10 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                             <label className="flex items-center gap-3 cursor-pointer">
                                 <Checkbox checked={includeVaultConfig} onCheckedChange={(v) => setIncludeVaultConfig(Boolean(v))} />
                                 <Settings2 className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm">{t("ui.backup.import.option.vaultConfig")}</span>
+                                <span className="text-sm">
+                                    {t("ui.backup.import.option.vaultConfig")}{" "}
+                                    (<code className="font-mono text-xs bg-muted text-foreground px-1.5 py-0.5 rounded">.obsidian</code>)
+                                </span>
                             </label>
                             <label className={cn("flex items-center gap-3", includeNotes ? "cursor-pointer" : "cursor-not-allowed opacity-50")}>
                                 <Checkbox
@@ -257,7 +265,10 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                                 />
                                 <HistoryIcon className="h-4 w-4 text-muted-foreground" />
                                 <div className="flex flex-col">
-                                    <span className="text-sm">{t("ui.backup.import.option.noteHistory")}</span>
+                                    <span className="text-sm">
+                                        {t("ui.backup.import.option.noteHistory")}{" "}
+                                        (<code className="font-mono text-xs bg-muted text-foreground px-1.5 py-0.5 rounded">.fns/note_history.json</code>)
+                                    </span>
                                     {!includeNotes && (
                                         <span className="text-[11px] text-muted-foreground">{t("ui.backup.import.option.noteHistoryDepends")}</span>
                                     )}
@@ -303,7 +314,7 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                     onConfirm={() => void doImport(false)}
                 />
 
-                {/* 零信任校验：缺少所选内容时选择部分导入或放弃 */}
+                {/* 零信任校验：缺少所选内容时提示已有/缺少，可选择导入已有部分或取消本次导入 */}
                 <CountdownConfirmDialog
                     open={Boolean(partialInfo)}
                     onOpenChange={(next) => !next && setPartialInfo(null)}
@@ -311,6 +322,9 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                     description={
                         partialInfo
                             ? t("ui.backup.import.partial.desc", {
+                                  available: availableSectionNames(partialInfo.available)
+                                      .map((key) => t(`ui.backup.import.section.${key}`))
+                                      .join(t("ui.backup.import.partial.joiner")),
                                   missing: partialInfo.missing
                                       .map((key) => t(`ui.backup.import.section.${key}`))
                                       .join(t("ui.backup.import.partial.joiner")),
@@ -318,6 +332,7 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
                             : ""
                     }
                     confirmLabel={t("ui.backup.import.partial.confirm")}
+                    cancelLabel={t("ui.backup.import.partial.cancel")}
                     seconds={3}
                     loading={isImporting}
                     onConfirm={confirmPartialImport}
