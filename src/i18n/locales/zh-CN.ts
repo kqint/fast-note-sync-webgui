@@ -831,6 +831,7 @@ export default {
     "ui.backup.import.warning.desc": "导入采用全部覆盖策略：与备份包同名的笔记、附件、仓库配置将被备份包内容覆盖，所选笔记的历史版本将被替换。此操作不可撤销，请谨慎操作。",
     "ui.backup.import.file": "备份包文件 (zip)",
     "ui.backup.import.scope": "导入范围",
+    "ui.backup.import.optionRequired": "请至少勾选一项导入内容",
     "ui.backup.import.option.notes": "笔记和附件",
     "ui.backup.import.option.vaultConfig": "仓库配置 (.obsidian)",
     "ui.backup.import.option.noteHistory": "笔记历史",

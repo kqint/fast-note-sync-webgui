@@ -829,6 +829,7 @@ export default {
     "ui.backup.import.warning.desc": "インポートは全上書き戦略を使用します：バックアップと同じパスのノート、添付ファイル、保管庫設定は上書きされ、対象ノートの履歴も置き換えられます。この操作は取り消せません。",
     "ui.backup.import.file": "バックアップファイル (zip)",
     "ui.backup.import.scope": "インポート範囲",
+    "ui.backup.import.optionRequired": "少なくとも1つのインポート項目を選択してください",
     "ui.backup.import.option.notes": "ノートと添付ファイル",
     "ui.backup.import.option.vaultConfig": "保管庫設定 (.obsidian)",
     "ui.backup.import.option.noteHistory": "ノート履歴",

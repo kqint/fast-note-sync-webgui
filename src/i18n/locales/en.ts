@@ -831,6 +831,7 @@ export default {
     "ui.backup.import.warning.desc": "Import uses a full-overwrite strategy: notes, attachments and vault config with the same path as the backup will be overwritten, and note history of affected notes will be replaced. This action cannot be undone.",
     "ui.backup.import.file": "Backup archive (.zip)",
     "ui.backup.import.scope": "Import Scope",
+    "ui.backup.import.optionRequired": "Select at least one import section",
     "ui.backup.import.option.notes": "Notes & attachments",
     "ui.backup.import.option.vaultConfig": "Vault config (.obsidian)",
     "ui.backup.import.option.noteHistory": "Note history",

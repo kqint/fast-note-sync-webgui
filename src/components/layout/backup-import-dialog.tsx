@@ -81,7 +81,9 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
 
     // 选项有效性：勾选笔记历史必须同时勾选笔记和附件（服务端同样校验）
     const optionsValid = includeNoteHistory ? includeNotes : true;
-    const canSubmit = Boolean(vault && file && optionsValid && !isImporting);
+    // 至少勾选一项导入内容才允许确认
+    const hasAnyOption = includeNotes || includeVaultConfig || includeNoteHistory;
+    const canSubmit = Boolean(vault && file && optionsValid && hasAnyOption && !isImporting);
 
     const buildFormData = (flags: { notes: boolean; vaultConfig: boolean; history: boolean }, allowPartial: boolean): FormData => {
         const formData = new FormData();
@@ -265,6 +267,9 @@ export function BackupImportDialog({ open, onOpenChange }: BackupImportDialogPro
 
                         {!optionsValid && (
                             <p className="text-xs text-destructive">{t("ui.backup.import.option.noteHistoryDepends")}</p>
+                        )}
+                        {!hasAnyOption && (
+                            <p className="text-xs text-destructive">{t("ui.backup.import.optionRequired")}</p>
                         )}
 
                         {/* 导入按钮：点击后弹出 3 秒倒计时确认小窗 */}

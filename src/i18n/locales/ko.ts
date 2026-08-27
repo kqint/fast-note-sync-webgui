@@ -829,6 +829,7 @@ export default {
     "ui.backup.import.warning.desc": "가져오기는 전체 덮어쓰기 전략을 사용합니다: 백업과 동일한 경로의 노트, 첨부 파일, 볼트 설정은 백업 내용으로 덮어써지며, 해당 노트의 기록도 대체됩니다. 이 작업은 되돌릴 수 없습니다.",
     "ui.backup.import.file": "백업 파일 (zip)",
     "ui.backup.import.scope": "가져오기 범위",
+    "ui.backup.import.optionRequired": "가져오기 항목을 하나 이상 선택하세요",
     "ui.backup.import.option.notes": "노트 및 첨부 파일",
     "ui.backup.import.option.vaultConfig": "볼트 설정 (.obsidian)",
     "ui.backup.import.option.noteHistory": "노트 기록",

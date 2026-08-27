@@ -84,5 +84,4 @@ export interface BackupImportAvailability {
 export interface BackupImportValidateInfo {
     available: BackupImportAvailability;
     missing: string[];
-    sourceVault?: string;
 }

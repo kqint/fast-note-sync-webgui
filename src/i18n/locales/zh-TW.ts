@@ -829,6 +829,7 @@ export default {
     "ui.backup.import.warning.desc": "匯入採用全部覆蓋策略：與備份包同名的筆記、附件、倉庫設定將被備份包內容覆蓋，所選筆記的歷史版本將被替換。此操作不可復原，請謹慎操作。",
     "ui.backup.import.file": "備份檔 (zip)",
     "ui.backup.import.scope": "匯入範圍",
+    "ui.backup.import.optionRequired": "請至少勾選一項匯入內容",
     "ui.backup.import.option.notes": "筆記和附件",
     "ui.backup.import.option.vaultConfig": "倉庫設定 (.obsidian)",
     "ui.backup.import.option.noteHistory": "筆記歷史",
