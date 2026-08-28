@@ -69,6 +69,8 @@ interface SystemConfig {
     ftsBleveStoreRaw: boolean
     gitName: string
     gitEmail: string
+    backupImportSizeLimitEnabled: boolean
+    backupImportSizeLimit: string
 }
 
 interface CloudflareConfig {
@@ -122,6 +124,7 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
     const [configImportFile, setConfigImportFile] = useState<File | null>(null)
     const [isConfigImporting, setIsConfigImporting] = useState(false)
     const [showConfigImportConfirm, setShowConfigImportConfirm] = useState(false)
+    const [isSavingImportLimit, setIsSavingImportLimit] = useState(false)
 
     const addHeaderRow = () => {
         setHeadersList(prev => [
@@ -472,6 +475,34 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
             toast.error(t("ui.settings.backup.importError"))
         } finally {
             setIsConfigImporting(false)
+        }
+    }
+
+    // 保存导入大小限制（仅携带这两个字段做部分更新，避免误提交其他标签页未保存的改动）
+    const handleSaveImportLimit = async () => {
+        if (!config) return
+        const size = (config.backupImportSizeLimit || "2GB").trim() || "2GB"
+        setIsSavingImportLimit(true)
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/admin/config"), {
+                method: "POST",
+                headers: buildApiHeaders({ token }),
+                body: JSON.stringify({
+                    backupImportSizeLimitEnabled: config.backupImportSizeLimitEnabled,
+                    backupImportSizeLimit: size,
+                }),
+            })
+            const res = await response.json()
+            if (res.code > 0 && res.code < 200 && res.status !== false) {
+                toast.success(t("ui.settings.saveSuccess"))
+                setConfig(prev => prev ? { ...prev, backupImportSizeLimit: size } : null)
+            } else {
+                toast.error(`${res.message || t("ui.settings.saveFailed")}${res.details ? `\n${res.details}` : ""}`)
+            }
+        } catch {
+            toast.error(t("ui.settings.saveFailed"))
+        } finally {
+            setIsSavingImportLimit(false)
         }
     }
 
@@ -1590,6 +1621,47 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             </Button>
                                         )}
                                      </div>
+
+                                    <div className="border-t border-border" />
+
+                                    {/* 导入大小限制 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <HardDrive className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.importLimit.title")}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground whitespace-pre-line">{t("ui.settings.backup.importLimit.desc")}</p>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="backupImportSizeLimitEnabled"
+                                                checked={config.backupImportSizeLimitEnabled}
+                                                onCheckedChange={(checked) => updateConfig({ backupImportSizeLimitEnabled: !!checked })}
+                                            />
+                                            <Label htmlFor="backupImportSizeLimitEnabled" className="text-sm cursor-pointer">
+                                                {t("ui.settings.backup.importLimit.enabled")}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm text-muted-foreground whitespace-nowrap">{t("ui.settings.backup.importLimit.size")}</span>
+                                            <Input
+                                                value={config.backupImportSizeLimit}
+                                                onChange={(e) => updateConfig({ backupImportSizeLimit: e.target.value })}
+                                                placeholder="2GB"
+                                                disabled={!config.backupImportSizeLimitEnabled}
+                                                className="rounded-xl max-w-[160px]"
+                                            />
+                                            <p className="text-xs text-muted-foreground">{t("ui.settings.backup.importLimit.sizeHint")}</p>
+                                        </div>
+                                        <div className="pt-2">
+                                            <Button onClick={handleSaveImportLimit} disabled={isSavingImportLimit} className="rounded-xl">
+                                                {isSavingImportLimit ? (
+                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                                ) : (
+                                                    <><Save className="h-4 w-4 mr-2" />{t("ui.settings.saveSettings")}</>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
                                  </TabsContent>
                              </div>
                          </Tabs>
