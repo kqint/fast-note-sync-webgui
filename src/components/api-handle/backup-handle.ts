@@ -1,4 +1,4 @@
-import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportResult, BackupImportValidateInfo } from "@/lib/types/backup";
+import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportTask, BackupImportTaskStatus } from "@/lib/types/backup";
 import { useConfirmDialog } from "@/components/context/confirm-dialog-context";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
 import { buildApiHeaders } from "@/lib/utils/api-headers";
@@ -120,14 +120,9 @@ export function useBackupHandle() {
     }, [token, openConfirmDialog, t])
 
     /**
-     * 导入备份包（覆盖策略）
-     * onPartial: 备份包缺少所选内容（服务端 code 545）时回调，携带可用部分信息
+     * 提交导入备份任务（异步；同步快检失败以错误码返回）
      */
-    const handleBackupImport = useCallback(async (
-        formData: FormData,
-        callback?: (data: BackupImportResult) => void,
-        onPartial?: (data: BackupImportValidateInfo) => void,
-    ) => {
+    const handleBackupImportSubmit = useCallback(async (formData: FormData, callback: (data: BackupImportTask) => void) => {
         try {
             const response = await fetch(addCacheBuster(env.API_URL + "/api/backup/import"), {
                 method: "POST",
@@ -141,16 +136,70 @@ export function useBackupHandle() {
 
             const res = await response.json()
             if (res.code < 100 && res.code > 0) {
-                if (callback && res.data) {
+                if (res.data) {
                     callback(res.data)
                 }
-            } else if (res.code === 545 && onPartial && res.data) {
-                onPartial(res.data)
+            } else {
+                openConfirmDialog(`${res.message}${res.details ? `\n${res.details}` : ""}`, "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.error") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
+    /**
+     * 查询导入任务状态
+     */
+    const handleBackupImportStatus = useCallback(async (taskId: string, callback: (data: BackupImportTaskStatus) => void) => {
+        try {
+            const url = env.API_URL + `/api/backup/import/status?taskId=${encodeURIComponent(taskId)}`;
+            const response = await fetch(addCacheBuster(url), {
+                method: "GET",
+                headers: buildApiHeaders({ token }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (res.data) {
+                    callback(res.data)
+                }
             } else {
                 openConfirmDialog(res.message + ": " + (res.details || ""), "error")
             }
         } catch (error) {
-            openConfirmDialog(t("api.backup.import.error") + ": " + error, "error")
+            openConfirmDialog(t("api.backup.import.taskError") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
+    /**
+     * 确认/取消 await_partial 导入任务
+     */
+    const handleBackupImportConfirm = useCallback(async (taskId: string, allowPartial: boolean, callback?: (data: BackupImportTaskStatus) => void) => {
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/backup/import/confirm"), {
+                method: "POST",
+                body: JSON.stringify({ taskId, allowPartial }),
+                headers: buildApiHeaders({ token }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (callback && res.data) {
+                    callback(res.data)
+                }
+            } else {
+                openConfirmDialog(res.message + ": " + (res.details || ""), "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.taskError") + ": " + error, "error")
         }
     }, [token, openConfirmDialog, t])
 
@@ -198,13 +247,17 @@ export function useBackupHandle() {
         handleBackupConfigUpdate,
         handleBackupExecute,
         handleBackupHistory,
-        handleBackupImport,
+        handleBackupImportSubmit,
+        handleBackupImportStatus,
+        handleBackupImportConfirm,
     }), [
         handleBackupConfigList,
         handleBackupConfigDelete,
         handleBackupConfigUpdate,
         handleBackupExecute,
         handleBackupHistory,
-        handleBackupImport,
+        handleBackupImportSubmit,
+        handleBackupImportStatus,
+        handleBackupImportConfirm,
     ])
 }

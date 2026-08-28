@@ -9,6 +9,8 @@ interface FileDropzoneProps {
     accept?: string;
     /** 未选中时的提示文案 */
     placeholder?: string;
+    /** 扩展名不与 accept 匹配时回调（供外层 toast 提示） */
+    onInvalid?: (file: File) => void;
     className?: string;
 }
 
@@ -23,7 +25,7 @@ function formatFileSize(bytes: number): string {
 /**
  * 卡片式文件上传框：虚线边框，支持点击与拖拽，选中后高亮显示文件名与大小
  */
-export function FileDropzone({ value, onChange, accept, placeholder, className }: FileDropzoneProps) {
+export function FileDropzone({ value, onChange, accept, placeholder, onInvalid, className }: FileDropzoneProps) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -41,7 +43,10 @@ export function FileDropzone({ value, onChange, accept, placeholder, className }
 
     const acceptFile = (file: File | undefined | null) => {
         if (!file) return;
-        if (!isValidFile(file)) return;
+        if (!isValidFile(file)) {
+            onInvalid?.(file);
+            return;
+        }
         onChange(file);
     };
 
@@ -73,7 +78,12 @@ export function FileDropzone({ value, onChange, accept, placeholder, className }
             onDrop={(e) => {
                 e.preventDefault();
                 setIsDragging(false);
-                acceptFile(e.dataTransfer.files?.[0]);
+                const dropped = e.dataTransfer.files?.[0];
+                if (dropped && !isValidFile(dropped)) {
+                    onInvalid?.(dropped);
+                    return;
+                }
+                acceptFile(dropped);
             }}
         >
             <input

@@ -85,3 +85,41 @@ export interface BackupImportValidateInfo {
     available: BackupImportAvailability;
     missing: string[];
 }
+
+export type BackupImportPhase = "validating" | "await_partial" | "importing" | "success" | "failed" | "cancelled";
+
+export interface BackupImportTask {
+    taskId: string;
+    phase: BackupImportPhase;
+}
+
+export interface BackupImportTotals {
+    notes: number;
+    files: number;
+    settings: number;
+    noteHistory: number;
+}
+
+export interface BackupImportProgress {
+    notes: number;
+    files: number;
+    settings: number;
+    noteHistory: number;
+    skippedHistory: number;
+}
+
+export interface BackupImportTaskError {
+    code: number;
+    message: string;
+}
+
+export interface BackupImportTaskStatus {
+    taskId: string;
+    phase: BackupImportPhase;
+    totals: BackupImportTotals;
+    progress: BackupImportProgress;
+    available?: BackupImportAvailability;
+    missing?: string[];
+    result?: BackupImportResult;
+    error?: BackupImportTaskError;
+}
