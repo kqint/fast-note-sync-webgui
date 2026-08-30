@@ -880,6 +880,14 @@ export default {
     "ui.backup.import.history.desc": "查看最近的備份匯入與還原記錄。",
     "ui.backup.import.history.noData": "暫無匯入歷史記錄",
     "ui.backup.import.history.noDataDesc": "每次執行本地備份匯入後，將在此處展示詳細的執行耗時與狀態。",
+    "ui.backup.import.history.status.0": "進行中",
+    "ui.backup.import.history.status.1": "成功",
+    "ui.backup.import.history.status.2": "失敗",
+    "ui.backup.import.history.status.3": "已取消",
+    "ui.backup.import.history.status.4": "已中斷",
+    "ui.backup.import.scope.notes": "筆記",
+    "ui.backup.import.scope.vaultConfig": "設定",
+    "ui.backup.import.scope.noteHistory": "歷史",
 
     // --- ui.git ---
     "ui.git.title": "Git 自動化管理",
@@ -970,6 +978,7 @@ export default {
     "api.backup.import.success": "備份匯入成功",
     "api.backup.import.error": "匯入備份失敗",
     "api.backup.import.taskError": "匯入任務查詢失敗",
+    "api.backup.import.historyError": "獲取匯入歷史記錄失敗",
     "api.system.restart.success": "服務重啟已觸發",
     "api.system.restart.error": "重啟服務請求失敗",
     "api.system.gc.success": "記憶體回收已觸發",

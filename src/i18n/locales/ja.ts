@@ -880,6 +880,14 @@ export default {
     "ui.backup.import.history.desc": "最近のバックアップインポートと復元の記録を確認します。",
     "ui.backup.import.history.noData": "インポート履歴はありません",
     "ui.backup.import.history.noDataDesc": "ローカルバックアップをインポートすると、ここに実行時間と状態の詳細が表示されます。",
+    "ui.backup.import.history.status.0": "実行中",
+    "ui.backup.import.history.status.1": "成功",
+    "ui.backup.import.history.status.2": "失敗",
+    "ui.backup.import.history.status.3": "キャンセル",
+    "ui.backup.import.history.status.4": "中断",
+    "ui.backup.import.scope.notes": "ノート",
+    "ui.backup.import.scope.vaultConfig": "設定",
+    "ui.backup.import.scope.noteHistory": "履歴",
 
     // --- ui.git ---
     "ui.git.title": "Git 自動化管理",
@@ -970,6 +978,7 @@ export default {
     "api.backup.import.success": "バックアップのインポートに成功しました",
     "api.backup.import.error": "バックアップのインポートに失敗しました",
     "api.backup.import.taskError": "インポートタスクの照会に失敗しました",
+    "api.backup.import.historyError": "インポート履歴の取得に失敗しました",
     "api.system.restart.success": "サービスの再起動がトリガーされました",
     "api.system.restart.error": "サービス再起動リクエストに失敗しました",
     "api.system.gc.success": "メモリ回収がトリガーされました",

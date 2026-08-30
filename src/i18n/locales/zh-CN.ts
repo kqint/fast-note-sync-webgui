@@ -882,6 +882,14 @@ export default {
     "ui.backup.import.history.desc": "查看最近的备份导入与恢复记录。",
     "ui.backup.import.history.noData": "暂无导入历史记录",
     "ui.backup.import.history.noDataDesc": "每次执行本地备份导入后，将在此处展示详细的执行耗时与状态。",
+    "ui.backup.import.history.status.0": "进行中",
+    "ui.backup.import.history.status.1": "成功",
+    "ui.backup.import.history.status.2": "失败",
+    "ui.backup.import.history.status.3": "已取消",
+    "ui.backup.import.history.status.4": "已中断",
+    "ui.backup.import.scope.notes": "笔记",
+    "ui.backup.import.scope.vaultConfig": "配置",
+    "ui.backup.import.scope.noteHistory": "历史",
 
     // --- ui.git ---
     "ui.git.title": "Git 自动化管理",
@@ -972,6 +980,7 @@ export default {
     "api.backup.import.success": "备份导入成功",
     "api.backup.import.error": "导入备份失败",
     "api.backup.import.taskError": "导入任务查询失败",
+    "api.backup.import.historyError": "获取导入历史记录失败",
     "api.system.restart.success": "服务重启已触发",
     "api.system.restart.error": "重启服务请求失败",
     "api.system.gc.success": "内存回收已触发",

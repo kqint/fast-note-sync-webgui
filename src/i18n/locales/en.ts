@@ -882,6 +882,14 @@ export default {
     "ui.backup.import.history.desc": "Review recent backup import and restore records.",
     "ui.backup.import.history.noData": "No import history yet",
     "ui.backup.import.history.noDataDesc": "After each local backup import, detailed duration and status will be shown here.",
+    "ui.backup.import.history.status.0": "Running",
+    "ui.backup.import.history.status.1": "Success",
+    "ui.backup.import.history.status.2": "Failed",
+    "ui.backup.import.history.status.3": "Cancelled",
+    "ui.backup.import.history.status.4": "Stopped",
+    "ui.backup.import.scope.notes": "Notes",
+    "ui.backup.import.scope.vaultConfig": "Config",
+    "ui.backup.import.scope.noteHistory": "History",
 
     // --- ui.git ---
     "ui.git.title": "Git Automation Management",
@@ -972,6 +980,7 @@ export default {
     "api.backup.import.success": "Backup imported successfully",
     "api.backup.import.error": "Failed to import backup",
     "api.backup.import.taskError": "Failed to query import task",
+    "api.backup.import.historyError": "Failed to load import history",
     "api.system.restart.success": "Service restart triggered",
     "api.system.restart.error": "Failed to request service restart",
     "api.system.gc.success": "Garbage collection triggered",

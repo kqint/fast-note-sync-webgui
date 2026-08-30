@@ -123,3 +123,31 @@ export interface BackupImportTaskStatus {
     result?: BackupImportResult;
     error?: BackupImportTaskError;
 }
+
+/** 导入历史记录状态：0 进行中 / 1 成功 / 2 失败 / 3 已取消 / 4 已中断 */
+export type BackupImportHistoryStatus = 0 | 1 | 2 | 3 | 4;
+
+export interface BackupImportHistory {
+    id: number;
+    uid: number;
+    taskId: string;
+    vaultName: string;
+    fileName: string;
+    fileSize: number;
+    status: BackupImportHistoryStatus;
+    startTime: string;
+    endTime?: string;
+    durationMs: number;
+    includeNotes: boolean;
+    includeVaultConfig: boolean;
+    includeNoteHistory: boolean;
+    allowPartial: boolean;
+    notesCount: number;
+    filesCount: number;
+    settingsCount: number;
+    noteHistoryCount: number;
+    skippedHistoryCount: number;
+    message?: string;
+    createdAt: string;
+    updatedAt: string;
+}

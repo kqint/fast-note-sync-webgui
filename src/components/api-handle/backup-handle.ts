@@ -1,4 +1,4 @@
-import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportTask, BackupImportTaskStatus } from "@/lib/types/backup";
+import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportTask, BackupImportTaskStatus, BackupImportHistory } from "@/lib/types/backup";
 import { useConfirmDialog } from "@/components/context/confirm-dialog-context";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
 import { buildApiHeaders } from "@/lib/utils/api-headers";
@@ -241,6 +241,43 @@ export function useBackupHandle() {
         }
     }, [token, openConfirmDialog, t])
 
+    /**
+     * 获取导入历史记录
+     */
+    const handleBackupImportHistory = useCallback(async (page: number, pageSize: number, callback?: (data: { list: BackupImportHistory[], total: number }) => void) => {
+        try {
+            const url = env.API_URL + `/api/backup/import/historys?page=${page}&pageSize=${pageSize}`;
+
+            const response = await fetch(addCacheBuster(url), {
+                method: "GET",
+                headers: buildApiHeaders({ token }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (callback) {
+                    // 兼容处理：可能返回 ListRes，也可能直接返回 Array
+                    if (res.data && res.data.list) {
+                        const total = res.data.pager?.totalRows ?? res.data.total ?? 0;
+                        callback({ list: res.data.list, total })
+                    } else if (res.data && Array.isArray(res.data)) {
+                        callback({ list: res.data, total: res.total ?? -1 })
+                    } else {
+                        callback({ list: [], total: 0 })
+                    }
+                }
+            } else {
+                openConfirmDialog(res.message + ": " + res.details, "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.historyError") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
     return useMemo(() => ({
         handleBackupConfigList,
         handleBackupConfigDelete,
@@ -250,6 +287,7 @@ export function useBackupHandle() {
         handleBackupImportSubmit,
         handleBackupImportStatus,
         handleBackupImportConfirm,
+        handleBackupImportHistory,
     }), [
         handleBackupConfigList,
         handleBackupConfigDelete,
@@ -259,5 +297,6 @@ export function useBackupHandle() {
         handleBackupImportSubmit,
         handleBackupImportStatus,
         handleBackupImportConfirm,
+        handleBackupImportHistory,
     ])
 }

@@ -880,6 +880,14 @@ export default {
     "ui.backup.import.history.desc": "최근 백업 가져오기 및 복원 기록을 확인합니다.",
     "ui.backup.import.history.noData": "가져오기 기록이 없습니다",
     "ui.backup.import.history.noDataDesc": "로컬 백업을 가져온 후에는 이곳에 실행 시간과 상태가 자세히 표시됩니다.",
+    "ui.backup.import.history.status.0": "진행 중",
+    "ui.backup.import.history.status.1": "성공",
+    "ui.backup.import.history.status.2": "실패",
+    "ui.backup.import.history.status.3": "취소됨",
+    "ui.backup.import.history.status.4": "중단됨",
+    "ui.backup.import.scope.notes": "노트",
+    "ui.backup.import.scope.vaultConfig": "설정",
+    "ui.backup.import.scope.noteHistory": "기록",
 
     // --- ui.git ---
     "ui.git.title": "Git 자동화 관리",
@@ -970,6 +978,7 @@ export default {
     "api.backup.import.success": "백업 가져오기 성공",
     "api.backup.import.error": "백업 가져오기 실패",
     "api.backup.import.taskError": "가져오기 작업 조회 실패",
+    "api.backup.import.historyError": "가져오기 기록을 불러오지 못했습니다",
     "api.system.restart.success": "서비스 재시작이 트리거되었습니다",
     "api.system.restart.error": "서비스 재시작 요청 실패",
     "api.system.gc.success": "메모리 회수가 트리거되었습니다",
