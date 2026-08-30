@@ -77,6 +77,9 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
     const taskIdRef = useRef<string | null>(null);
     // 轮询定时器，组件卸载/重置时必须清理，避免任务结束后仍在请求
     const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    // await_partial 的决策幂等守卫：同一个任务只接受一次确认/取消。
+    // 没有它，重复点击会向已离开 await_partial 的任务发第二次 confirm，撞上 549。
+    const partialDecidedRef = useRef(false);
 
     /** 清理轮询定时器 */
     const stopPolling = useCallback(() => {
@@ -100,6 +103,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
     const resetState = useCallback(() => {
         stopPolling();
         taskIdRef.current = null;
+        partialDecidedRef.current = false;
         setFile(null);
         setPassword("");
         setIncludeNotes(true);
@@ -154,23 +158,39 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
         return formData;
     };
 
-    const applyStatus = (st: BackupImportTaskStatus) => {
+    const applyStatus = useCallback((st: BackupImportTaskStatus) => {
         setStatus(st);
-        if (st.phase === "await_partial") {
+        // 弹窗开关必须与阶段对称：只要不在（或已离开）await_partial 就关掉。
+        // 原实现只在 await_partial 时置 true、离开时从不置 false，于是任何一条
+        // 陈旧的 await_partial 响应都会把用户刚回答过的弹窗重新拉起且永不自动关闭。
+        if (st.phase === "await_partial" && !partialDecidedRef.current) {
             setShowPartialConfirm(true);
-        } else if (st.phase === "success") {
+            // 任务正在等用户决策，继续轮询没有意义（持续 15 分钟也会白白请求）；
+            // 确认请求返回后会恢复轮询。
+            stopPolling();
+        } else {
+            setShowPartialConfirm(false);
+        }
+        if (st.phase === "success") {
             setResult(st.result ?? null);
         } else if (st.phase === "failed") {
             setResult(null);
         }
-    };
+    }, [stopPolling]);
 
     /**
      * 轮询任务状态，直到终态停止。
      * 离开页面只停止轮询，后台任务继续执行。
      */
     const startPolling = useCallback((taskId: string) => {
+        // 只有提交新任务时才重置 await_partial 的决策守卫。
+        // 确认部分导入后也会调用本函数恢复轮询；若这里每次都重置，确认请求
+        // 返回的旧 await_partial 快照会再次打开弹窗，而后端实际上已按第一次选择推进任务。
+        const isNewTask = taskIdRef.current !== taskId;
         taskIdRef.current = taskId;
+        if (isNewTask) {
+            partialDecidedRef.current = false;
+        }
         // 同一组件内只允许存在一个轮询，重复启动前先清理
         stopPolling();
         const pollOnce = () => {
@@ -197,7 +217,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
             }
             pollOnce();
         }, POLL_INTERVAL_MS);
-    }, [handleBackupImportStatus, t, onImported, stopPolling]);
+    }, [handleBackupImportStatus, t, onImported, stopPolling, applyStatus]);
 
     const doImport = async () => {
         if (!file || !vault) return;
@@ -217,8 +237,11 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
     /** await_partial：确认继续（仅导入已有部分）或取消本次导入 */
     const confirmPartial = async (allowPartial: boolean) => {
         const taskId = taskIdRef.current;
+        // 幂等：同一个任务只接受一次决策。重复点击直接忽略，否则第二次请求
+        // 会打在已离开 await_partial 的任务上，收到「任务不存在或状态不支持」。
+        if (!taskId || partialDecidedRef.current) return;
+        partialDecidedRef.current = true;
         setShowPartialConfirm(false);
-        if (!taskId) return;
         await handleBackupImportConfirm(taskId, allowPartial, (st) => {
             applyStatus(st);
             if (st.phase === "cancelled") {
@@ -229,6 +252,11 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                 }
             }
         });
+        // 确认请求无论成败，只要任务还没进入终态就恢复轮询——
+        // applyStatus 已在 await_partial 处暂停过轮询，不恢复任务就再没人跟进。
+        if (taskIdRef.current === taskId) {
+            startPolling(taskId);
+        }
     };
 
     const progressRow = (labelKey: string, done: number, total: number) => (
@@ -264,15 +292,19 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                         {t("ui.backup.import.again")}
                     </Button>
                 </div>
-            ) : status && (phase === "validating" || phase === "importing") ? (
-                /* 校验/导入进度视图 */
+            ) : status && (phase === "validating" || phase === "importing" || phase === "await_partial") ? (
+                /* 校验/等待确认/导入进度视图
+                   await_partial 必须落在这里：它同样属于「任务进行中」，若掉进最后的
+                   else 分支会瞬间闪回导入表单，用户以为导入失败或没提交成功。 */
                 <div className="space-y-4">
                     <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-4">
                         <div className="flex items-center gap-2 font-semibold text-primary">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             {phase === "validating"
                                 ? t("ui.backup.import.phase.validating")
-                                : t("ui.backup.import.phase.importing")}
+                                : phase === "await_partial"
+                                    ? t("ui.backup.import.phase.awaitPartial")
+                                    : t("ui.backup.import.phase.importing")}
                         </div>
 
                         {phase === "importing" && (
@@ -444,8 +476,9 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                 open={showPartialConfirm}
                 onOpenChange={() => {
                     setShowPartialConfirm(false);
-                    if (taskIdRef.current) {
-                        // 用户关闭弹窗视同取消本次导入
+                    // 用户关闭弹窗视同取消本次导入。但只在任务确实还在 await_partial
+                    // 时才发取消请求，否则会对已推进的任务误报「任务不存在或状态不支持」。
+                    if (taskIdRef.current && status?.phase === "await_partial") {
                         void confirmPartial(false);
                     }
                 }}

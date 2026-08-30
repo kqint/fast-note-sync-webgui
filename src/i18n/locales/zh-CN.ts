@@ -840,6 +840,7 @@ export default {
     "ui.backup.import.tooLarge": "导入文件超过大小限制（上限 {{limit}}）",
     "ui.backup.import.phase.validating": "正在校验备份包…",
     "ui.backup.import.phase.importing": "正在导入…",
+    "ui.backup.import.phase.awaitPartial": "等待确认…",
     "ui.backup.import.progressTip": "导入将在后台继续执行，关闭窗口不会中断任务。",
     "ui.backup.import.cancelled": "已取消本次导入",
     "ui.backup.import.warning.title": "危险操作：导入将覆盖现有内容",

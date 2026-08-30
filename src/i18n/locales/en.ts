@@ -840,6 +840,7 @@ export default {
     "ui.backup.import.tooLarge": "The import file exceeds the size limit (max {{limit}})",
     "ui.backup.import.phase.validating": "Validating backup archive…",
     "ui.backup.import.phase.importing": "Importing…",
+    "ui.backup.import.phase.awaitPartial": "Waiting for confirmation…",
     "ui.backup.import.progressTip": "The import continues in the background; closing this window will not interrupt it.",
     "ui.backup.import.cancelled": "Import cancelled",
     "ui.backup.import.warning.title": "Danger: import will overwrite existing content",

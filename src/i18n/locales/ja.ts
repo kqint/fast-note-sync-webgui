@@ -838,6 +838,7 @@ export default {
     "ui.backup.import.tooLarge": "インポートファイルがサイズ制限を超えています（上限 {{limit}}）",
     "ui.backup.import.phase.validating": "バックアップを検証中…",
     "ui.backup.import.phase.importing": "インポート中…",
+    "ui.backup.import.phase.awaitPartial": "確認を待っています…",
     "ui.backup.import.progressTip": "インポートはバックグラウンドで継続されます。ウィンドウを閉じても中断されません。",
     "ui.backup.import.cancelled": "インポートをキャンセルしました",
     "ui.backup.import.warning.title": "危険な操作：インポートすると既存の内容が上書きされます",

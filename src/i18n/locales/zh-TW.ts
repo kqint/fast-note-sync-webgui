@@ -838,6 +838,7 @@ export default {
     "ui.backup.import.tooLarge": "匯入檔案超過大小限制（上限 {{limit}}）",
     "ui.backup.import.phase.validating": "正在校驗備份檔…",
     "ui.backup.import.phase.importing": "正在匯入…",
+    "ui.backup.import.phase.awaitPartial": "等待確認…",
     "ui.backup.import.progressTip": "匯入將在後台繼續執行，關閉視窗不會中斷任務。",
     "ui.backup.import.cancelled": "已取消本次匯入",
     "ui.backup.import.warning.title": "危險操作：匯入將覆蓋現有內容",

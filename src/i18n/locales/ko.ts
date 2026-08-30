@@ -838,6 +838,7 @@ export default {
     "ui.backup.import.tooLarge": "가져오기 파일이 크기 제한을 초과했습니다 (최대 {{limit}})",
     "ui.backup.import.phase.validating": "백업 파일 확인 중…",
     "ui.backup.import.phase.importing": "가져오는 중…",
+    "ui.backup.import.phase.awaitPartial": "확인을 기다리는 중…",
     "ui.backup.import.progressTip": "가져오기는 백그라운드에서 계속됩니다. 창을 닫아도 작업이 중단되지 않습니다.",
     "ui.backup.import.cancelled": "가져오기가 취소되었습니다",
     "ui.backup.import.warning.title": "위험한 작업: 가져오면 기존 내용이 덮어써집니다",
