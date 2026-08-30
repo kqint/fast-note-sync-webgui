@@ -457,7 +457,7 @@ export default {
     "ui.settings.backup.importSuccess": "設定のインポートに成功しました。適用にはサービスの再起動が必要です",
     "ui.settings.backup.importError": "設定のインポートに失敗しました",
     "ui.settings.backup.importLimit.title": "インポートサイズ制限",
-    "ui.settings.backup.importLimit.desc": "単一のバックアップインポートファイルのサイズを制限します。デフォルトでは無効（制限なし）です。有効にすると、上限を超えるインポートは拒否されます。変更はすぐに反映されます。",
+    "ui.settings.backup.importLimit.desc": "ノートのバックアップアーカイブ（ZIP）のインポートサイズのみを制限します。設定のインポートには固定の 2MB 上限が別途適用され、この設定の影響を受けません。デフォルトでは無効（制限なし）です。有効にすると、上限を超えるバックアップアーカイブは拒否されます。変更はすぐに反映されます。",
     "ui.settings.backup.importLimit.enabled": "インポートサイズ制限を有効にする",
     "ui.settings.backup.importLimit.size": "サイズ上限",
     "ui.settings.backup.importLimit.sizeHint": "KB / MB / GB に対応、例：512MB、2GB",

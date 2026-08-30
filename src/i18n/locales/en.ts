@@ -459,7 +459,7 @@ export default {
     "ui.settings.backup.importSuccess": "Config imported successfully, restart the service to apply",
     "ui.settings.backup.importError": "Failed to import config",
     "ui.settings.backup.importLimit.title": "Import Size Limit",
-    "ui.settings.backup.importLimit.desc": "Limit the size of a single backup import file. Disabled by default (unlimited). When enabled, imports exceeding the limit are rejected. Changes take effect immediately.",
+    "ui.settings.backup.importLimit.desc": "Limits the size of note backup archives (ZIP) only; config imports have their own fixed 2MB cap and are not affected by this setting. Disabled by default (unlimited). When enabled, backup archives exceeding the limit are rejected. Changes take effect immediately.",
     "ui.settings.backup.importLimit.enabled": "Enable import size limit",
     "ui.settings.backup.importLimit.size": "Size limit",
     "ui.settings.backup.importLimit.sizeHint": "Supports KB / MB / GB, e.g. 512MB, 2GB",

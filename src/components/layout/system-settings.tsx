@@ -1569,6 +1569,47 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                         {t("ui.settings.backup.tab")}
                                     </h2>
 
+                                    {/* 导入大小限制 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <HardDrive className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.importLimit.title")}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground whitespace-pre-line">{t("ui.settings.backup.importLimit.desc")}</p>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="backupImportSizeLimitEnabled"
+                                                checked={config.backupImportSizeLimitEnabled}
+                                                onCheckedChange={(checked) => updateConfig({ backupImportSizeLimitEnabled: !!checked })}
+                                            />
+                                            <Label htmlFor="backupImportSizeLimitEnabled" className="text-sm cursor-pointer">
+                                                {t("ui.settings.backup.importLimit.enabled")}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm text-muted-foreground whitespace-nowrap">{t("ui.settings.backup.importLimit.size")}</span>
+                                            <Input
+                                                value={config.backupImportSizeLimit}
+                                                onChange={(e) => updateConfig({ backupImportSizeLimit: e.target.value })}
+                                                placeholder="2GB"
+                                                disabled={!config.backupImportSizeLimitEnabled}
+                                                className="rounded-xl max-w-[160px]"
+                                            />
+                                            <p className="text-xs text-muted-foreground">{t("ui.settings.backup.importLimit.sizeHint")}</p>
+                                        </div>
+                                        <div className="pt-2">
+                                            <Button onClick={handleSaveImportLimit} disabled={isSavingImportLimit} className="rounded-xl">
+                                                {isSavingImportLimit ? (
+                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                                ) : (
+                                                    <><Save className="h-4 w-4 mr-2" />{t("ui.settings.saveSettings")}</>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-border" />
+
                                     {/* 设置备份 */}
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3">
@@ -1621,47 +1662,6 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             </Button>
                                         )}
                                      </div>
-
-                                    <div className="border-t border-border" />
-
-                                    {/* 导入大小限制 */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-3">
-                                            <HardDrive className="h-5 w-5 text-muted-foreground" />
-                                            <span className="text-sm font-medium">{t("ui.settings.backup.importLimit.title")}</span>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground whitespace-pre-line">{t("ui.settings.backup.importLimit.desc")}</p>
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id="backupImportSizeLimitEnabled"
-                                                checked={config.backupImportSizeLimitEnabled}
-                                                onCheckedChange={(checked) => updateConfig({ backupImportSizeLimitEnabled: !!checked })}
-                                            />
-                                            <Label htmlFor="backupImportSizeLimitEnabled" className="text-sm cursor-pointer">
-                                                {t("ui.settings.backup.importLimit.enabled")}
-                                            </Label>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-sm text-muted-foreground whitespace-nowrap">{t("ui.settings.backup.importLimit.size")}</span>
-                                            <Input
-                                                value={config.backupImportSizeLimit}
-                                                onChange={(e) => updateConfig({ backupImportSizeLimit: e.target.value })}
-                                                placeholder="2GB"
-                                                disabled={!config.backupImportSizeLimitEnabled}
-                                                className="rounded-xl max-w-[160px]"
-                                            />
-                                            <p className="text-xs text-muted-foreground">{t("ui.settings.backup.importLimit.sizeHint")}</p>
-                                        </div>
-                                        <div className="pt-2">
-                                            <Button onClick={handleSaveImportLimit} disabled={isSavingImportLimit} className="rounded-xl">
-                                                {isSavingImportLimit ? (
-                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
-                                                ) : (
-                                                    <><Save className="h-4 w-4 mr-2" />{t("ui.settings.saveSettings")}</>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </div>
                                  </TabsContent>
                              </div>
                          </Tabs>

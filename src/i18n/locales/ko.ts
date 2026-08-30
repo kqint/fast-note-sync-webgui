@@ -457,7 +457,7 @@ export default {
     "ui.settings.backup.importSuccess": "설정 가져오기 성공, 적용하려면 서비스를 재시작하세요",
     "ui.settings.backup.importError": "설정 가져오기 실패",
     "ui.settings.backup.importLimit.title": "가져오기 크기 제한",
-    "ui.settings.backup.importLimit.desc": "단일 백업 가져오기 파일의 크기를 제한합니다. 기본적으로 비활성화(제한 없음)되어 있습니다. 활성화하면 상한을 초과하는 가져오기가 거부됩니다. 변경 사항은 즉시 적용됩니다.",
+    "ui.settings.backup.importLimit.desc": "노트 백업 아카이브(ZIP)의 가져오기 크기만 제한합니다. 설정 가져오기에는 별도의 고정 2MB 상한이 적용되며 이 설정의 영향을 받지 않습니다. 기본적으로 비활성화(제한 없음)되어 있습니다. 활성화하면 상한을 초과하는 백업 아카이브는 거부됩니다. 변경 사항은 즉시 적용됩니다.",
     "ui.settings.backup.importLimit.enabled": "가져오기 크기 제한 사용",
     "ui.settings.backup.importLimit.size": "크기 상한",
     "ui.settings.backup.importLimit.sizeHint": "KB / MB / GB 지원, 예: 512MB, 2GB",

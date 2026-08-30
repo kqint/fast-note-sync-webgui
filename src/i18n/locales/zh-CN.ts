@@ -459,7 +459,7 @@ export default {
     "ui.settings.backup.importSuccess": "配置导入成功，重启服务后生效",
     "ui.settings.backup.importError": "配置导入失败",
     "ui.settings.backup.importLimit.title": "导入大小限制",
-    "ui.settings.backup.importLimit.desc": "限制单个备份导入文件的大小。默认关闭（不限制）。开启后超出上限的导入将被拒绝。修改立即生效。",
+    "ui.settings.backup.importLimit.desc": "仅限制笔记备份包（ZIP）的导入大小；设置配置导入另有固定的 2MB 上限，不受此处影响。默认关闭（不限制）。开启后，超出上限的备份包将被拒绝。修改立即生效。",
     "ui.settings.backup.importLimit.enabled": "启用导入大小限制",
     "ui.settings.backup.importLimit.size": "大小上限",
     "ui.settings.backup.importLimit.sizeHint": "支持 KB / MB / GB，例如 512MB、2GB",
