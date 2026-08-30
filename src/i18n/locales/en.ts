@@ -207,6 +207,7 @@ export default {
     "ui.nav.menuNotes": "Note Management",
     "ui.nav.menuTrash": "Trash",
     "ui.nav.menuSync": "Backup & Sync",
+    "ui.nav.menuBackupRestore": "Backup Restore",
     "ui.nav.menuSettings": "System Settings",
     "ui.nav.menuGit": "Git Automation",
     "ui.nav.menuFiles": "Attachment Management",
@@ -872,6 +873,15 @@ export default {
     "ui.backup.import.result.settings": "Vault config",
     "ui.backup.import.result.history": "Note history",
     "ui.backup.import.result.skippedHistory": "Skipped history entries",
+    "ui.backup.restore.title": "Run Import",
+    "ui.backup.restore.desc": "Choose a local backup archive and restore it to the selected vault.",
+    "ui.backup.import.failed": "Import Failed",
+    "ui.backup.import.again": "Import Another",
+    "ui.backup.import.retry": "Retry Import",
+    "ui.backup.import.history.title": "Import History",
+    "ui.backup.import.history.desc": "Review recent backup import and restore records.",
+    "ui.backup.import.history.noData": "No import history yet",
+    "ui.backup.import.history.noDataDesc": "After each local backup import, detailed duration and status will be shown here.",
 
     // --- ui.git ---
     "ui.git.title": "Git Automation Management",

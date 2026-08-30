@@ -21,6 +21,7 @@ const SystemSettings = lazy(() => import("@/components/layout/system-settings").
 const VaultList = lazy(() => import("@/components/vault/vault-list").then(m => ({ default: m.VaultList })));
 const AuthForm = lazy(() => import("@/components/user/auth-form").then(m => ({ default: m.AuthForm })));
 const SyncBackup = lazy(() => import("@/components/layout/sync-backup").then(m => ({ default: m.SyncBackup })));
+const BackupRestore = lazy(() => import("@/components/layout/backup-restore").then(m => ({ default: m.BackupRestore })));
 const GitAutomation = lazy(() => import("@/components/layout/git-automation").then(m => ({ default: m.GitAutomation })));
 const SettingManager = lazy(() => import("@/components/setting/setting-manager").then(m => ({ default: m.SettingManager })));
 const SyncLogManager = lazy(() => import("@/components/sync-log/sync-log-manager").then(m => ({ default: m.SyncLogManager })));
@@ -326,6 +327,9 @@ function App() {
 
       case "sync":
         return <SyncBackup />
+
+      case "backup-restore":
+        return <BackupRestore />
 
       case "git":
         return <GitAutomation />

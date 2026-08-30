@@ -207,6 +207,7 @@ export default {
     "ui.nav.menuNotes": "笔记管理",
     "ui.nav.menuTrash": "回收站",
     "ui.nav.menuSync": "备份与同步",
+    "ui.nav.menuBackupRestore": "备份恢复",
     "ui.nav.menuSettings": "系统设置",
     "ui.nav.menuGit": "Git 自动化",
     "ui.nav.menuFiles": "附件管理",
@@ -872,6 +873,15 @@ export default {
     "ui.backup.import.result.settings": "仓库配置",
     "ui.backup.import.result.history": "笔记历史",
     "ui.backup.import.result.skippedHistory": "跳过的历史条目",
+    "ui.backup.restore.title": "执行导入",
+    "ui.backup.restore.desc": "选择本地备份包，恢复到指定的笔记库。",
+    "ui.backup.import.failed": "导入失败",
+    "ui.backup.import.again": "再导入一次",
+    "ui.backup.import.retry": "重试导入",
+    "ui.backup.import.history.title": "导入历史记录",
+    "ui.backup.import.history.desc": "查看最近的备份导入与恢复记录。",
+    "ui.backup.import.history.noData": "暂无导入历史记录",
+    "ui.backup.import.history.noDataDesc": "每次执行本地备份导入后，将在此处展示详细的执行耗时与状态。",
 
     // --- ui.git ---
     "ui.git.title": "Git 自动化管理",

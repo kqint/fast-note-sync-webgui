@@ -207,6 +207,7 @@ export default {
     "ui.nav.menuNotes": "筆記管理",
     "ui.nav.menuTrash": "回收站",
     "ui.nav.menuSync": "備份與同步",
+    "ui.nav.menuBackupRestore": "備份還原",
     "ui.nav.menuSettings": "系統設置",
     "ui.nav.menuGit": "Git 自動化",
     "ui.nav.menuFiles": "附件管理",
@@ -870,6 +871,15 @@ export default {
     "ui.backup.import.result.settings": "倉庫設定",
     "ui.backup.import.result.history": "筆記歷史",
     "ui.backup.import.result.skippedHistory": "跳過的歷史條目",
+    "ui.backup.restore.title": "執行匯入",
+    "ui.backup.restore.desc": "選擇本地備份包，還原到指定的筆記庫。",
+    "ui.backup.import.failed": "匯入失敗",
+    "ui.backup.import.again": "再匯入一次",
+    "ui.backup.import.retry": "重試匯入",
+    "ui.backup.import.history.title": "匯入歷史記錄",
+    "ui.backup.import.history.desc": "查看最近的備份匯入與還原記錄。",
+    "ui.backup.import.history.noData": "暫無匯入歷史記錄",
+    "ui.backup.import.history.noDataDesc": "每次執行本地備份匯入後，將在此處展示詳細的執行耗時與狀態。",
 
     // --- ui.git ---
     "ui.git.title": "Git 自動化管理",

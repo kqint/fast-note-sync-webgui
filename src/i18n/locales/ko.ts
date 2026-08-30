@@ -207,6 +207,7 @@ export default {
     "ui.nav.menuNotes": "노트 관리",
     "ui.nav.menuTrash": "휴지통",
     "ui.nav.menuSync": "백업 및 동기화",
+    "ui.nav.menuBackupRestore": "백업 복원",
     "ui.nav.menuSettings": "시스템 설정",
     "ui.nav.menuGit": "Git 자동화",
     "ui.nav.menuFiles": "첨부 파일 관리",
@@ -870,6 +871,15 @@ export default {
     "ui.backup.import.result.settings": "볼트 설정",
     "ui.backup.import.result.history": "노트 기록",
     "ui.backup.import.result.skippedHistory": "건너뛴 기록 항목",
+    "ui.backup.restore.title": "가져오기 실행",
+    "ui.backup.restore.desc": "로컬 백업 아카이브를 선택하여 지정한 노트 저장소로 복원합니다.",
+    "ui.backup.import.failed": "가져오기 실패",
+    "ui.backup.import.again": "다시 가져오기",
+    "ui.backup.import.retry": "가져오기 재시도",
+    "ui.backup.import.history.title": "가져오기 기록",
+    "ui.backup.import.history.desc": "최근 백업 가져오기 및 복원 기록을 확인합니다.",
+    "ui.backup.import.history.noData": "가져오기 기록이 없습니다",
+    "ui.backup.import.history.noDataDesc": "로컬 백업을 가져온 후에는 이곳에 실행 시간과 상태가 자세히 표시됩니다.",
 
     // --- ui.git ---
     "ui.git.title": "Git 자동화 관리",

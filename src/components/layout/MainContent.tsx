@@ -23,7 +23,7 @@ export function MainContent({ children, className }: MainContentProps) {
   const isMobile = useMobile()
 
   // 设置页面、概况页面和同步页面不需要外层卡片容器
-  const isPlainPage = currentModule === 'dashboard' || currentModule === 'sync' || currentModule === 'git' || currentModule === 'config' || currentModule === 'vaults'
+  const isPlainPage = currentModule === 'dashboard' || currentModule === 'sync' || currentModule === 'backup-restore' || currentModule === 'git' || currentModule === 'config' || currentModule === 'vaults'
 
   return (
     <main

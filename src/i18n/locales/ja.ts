@@ -207,6 +207,7 @@ export default {
     "ui.nav.menuNotes": "ノート管理",
     "ui.nav.menuTrash": "ゴミ箱",
     "ui.nav.menuSync": "バックアップと同期",
+    "ui.nav.menuBackupRestore": "バックアップ復元",
     "ui.nav.menuSettings": "システム設定",
     "ui.nav.menuGit": "Git 自動化",
     "ui.nav.menuFiles": "添付ファイル管理",
@@ -870,6 +871,15 @@ export default {
     "ui.backup.import.result.settings": "保管庫設定",
     "ui.backup.import.result.history": "ノート履歴",
     "ui.backup.import.result.skippedHistory": "スキップされた履歴",
+    "ui.backup.restore.title": "インポート実行",
+    "ui.backup.restore.desc": "ローカルのバックアップアーカイブを選択し、指定したノートライブラリに復元します。",
+    "ui.backup.import.failed": "インポート失敗",
+    "ui.backup.import.again": "もう一度インポート",
+    "ui.backup.import.retry": "インポートを再試行",
+    "ui.backup.import.history.title": "インポート履歴",
+    "ui.backup.import.history.desc": "最近のバックアップインポートと復元の記録を確認します。",
+    "ui.backup.import.history.noData": "インポート履歴はありません",
+    "ui.backup.import.history.noDataDesc": "ローカルバックアップをインポートすると、ここに実行時間と状態の詳細が表示されます。",
 
     // --- ui.git ---
     "ui.git.title": "Git 自動化管理",

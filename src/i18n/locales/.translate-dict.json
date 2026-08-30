@@ -962,5 +962,15 @@
   "ui.unsaved.message": "b94c9d089dfa48145be65f71d4e009ed",
   "ui.unsaved.leave": "0a5ada90baf0eca1b301b659de9d72c5",
   "ui.unsaved.stay": "337a46d59cdfac30e8882d1a60c7613e",
-  "ui.settings.backup.importLimit.desc": "7b9545dcce0f0b90942000bbcc69bec7"
+  "ui.settings.backup.importLimit.desc": "7b9545dcce0f0b90942000bbcc69bec7",
+  "ui.nav.menuBackupRestore": "9f85c3f8a59b0188de62cb7f1649af3e",
+  "ui.backup.restore.title": "6686b3717a8126e08754a3c45070ad28",
+  "ui.backup.restore.desc": "b3311baf34cb206553bd6b99c72f5618",
+  "ui.backup.import.failed": "fddcd7c6e456e5b131cfcf780b837e74",
+  "ui.backup.import.again": "74d4e387925b47ae871d3e0db024728f",
+  "ui.backup.import.retry": "39611a0f1b056093b48eb4a2b7a1aea6",
+  "ui.backup.import.history.title": "a0fde9d992be222cd01c9a7628b08635",
+  "ui.backup.import.history.desc": "6bd75f550b27a84f7f9d3c9db8b3f952",
+  "ui.backup.import.history.noData": "5da2e0a9b07f7087d0225ea2ad6cda69",
+  "ui.backup.import.history.noDataDesc": "d500c9d269fbfcf79802b10004103d01"
 }

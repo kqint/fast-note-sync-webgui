@@ -1,6 +1,5 @@
-import { Plus, Pencil, Trash2, Check, Cloud, HardDrive, Share2, Server, DatabaseBackup, Play, ShieldCheck, Clock, RefreshCw, History as HistoryIcon, CheckCircle2, AlertCircle, XCircle, Loader2, UploadCloud } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, Cloud, HardDrive, Share2, Server, DatabaseBackup, Play, ShieldCheck, Clock, RefreshCw, History as HistoryIcon, CheckCircle2, AlertCircle, XCircle, Loader2 } from "lucide-react";
 import { BackupHistoryDialog } from "@/components/layout/backup-history-dialog";
-import { BackupImportDialog } from "@/components/layout/backup-import-dialog";
 import { useConfirmDialog } from "@/components/context/confirm-dialog-context";
 import { useStorageHandle } from "@/components/api-handle/storage-handle";
 import { useBackupHandle } from "@/components/api-handle/backup-handle";
@@ -37,7 +36,6 @@ export function SyncBackup() {
     const [historyConfigId, setHistoryConfigId] = useState<number | null>(null)
     const [historyConfigType, setHistoryConfigType] = useState<string | undefined>(undefined)
     const [isShowHistory, setIsShowHistory] = useState(false)
-    const [isShowImport, setIsShowImport] = useState(false)
 
     const { handleStorageList, handleStorageDelete, handleStorageTypes } = useStorageHandle()
     const { handleBackupConfigList, handleBackupConfigDelete, handleBackupExecute } = useBackupHandle()
@@ -110,14 +108,6 @@ export function SyncBackup() {
                                 title={t("ui.common.refresh")}
                             >
                                 <RefreshCw className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsShowImport(true)}
-                                className="rounded-xl shrink-0"
-                            >
-                                <UploadCloud className="h-4 w-4 mr-2" />
-                                {t("ui.backup.import.title")}
                             </Button>
                             <Button onClick={() => setIsAddingBackup(true)} className="rounded-xl shrink-0">
                                 <Plus className="h-4 w-4 mr-2" />
@@ -425,13 +415,6 @@ export function SyncBackup() {
                     configType={historyConfigType as import("@/lib/types/backup").BackupType}
                     open={isShowHistory}
                     onOpenChange={setIsShowHistory}
-                />
-            )}
-
-            {isShowImport && (
-                <BackupImportDialog
-                    open={isShowImport}
-                    onOpenChange={setIsShowImport}
                 />
             )}
         </div>
