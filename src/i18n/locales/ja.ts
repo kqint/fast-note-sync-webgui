@@ -859,7 +859,7 @@ export default {
     "ui.backup.import.section.vaultConfig": "保管庫設定 (.obsidian)",
     "ui.backup.import.section.noteHistory": "ノート履歴",
     "ui.backup.import.partial.title": "バックアップに選択した内容がありません",
-    "ui.backup.import.partial.desc": "ゼロトラスト検証に失敗しました。\nバックアップに含まれる：{{available}}。\n不足：{{missing}}。\n含まれる部分のみインポートしますか？",
+    "ui.backup.import.partial.desc": "検証に失敗しました。\nバックアップに含まれる：{{available}}。\n不足：{{missing}}。\n含まれる部分のみインポートしますか？",
     "ui.backup.import.partial.confirm": "含まれる部分のみインポート",
     "ui.backup.import.partial.cancel": "インポートをキャンセル",
     "ui.backup.import.partial.joiner": "、",

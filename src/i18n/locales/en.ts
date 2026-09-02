@@ -861,7 +861,7 @@ export default {
     "ui.backup.import.section.vaultConfig": "Vault config (.obsidian)",
     "ui.backup.import.section.noteHistory": "Note history",
     "ui.backup.import.partial.title": "Backup archive is missing selected sections",
-    "ui.backup.import.partial.desc": "Zero-trust validation failed.\nAvailable in the archive: {{available}}.\nMissing: {{missing}}.\nImport only the available sections?",
+    "ui.backup.import.partial.desc": "Validation failed.\nAvailable in the archive: {{available}}.\nMissing: {{missing}}.\nImport only the available sections?",
     "ui.backup.import.partial.confirm": "Import Available Sections",
     "ui.backup.import.partial.cancel": "Cancel Import",
     "ui.backup.import.partial.joiner": ", ",

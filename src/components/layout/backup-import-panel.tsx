@@ -1,5 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CountdownConfirmDialog } from "@/components/common/countdown-confirm-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileDropzone } from "@/components/common/file-dropzone";
 import { useBackupHandle } from "@/components/api-handle/backup-handle";
 import { useVaultHandle } from "@/components/api-handle/vault-handle";
@@ -116,6 +117,16 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
         setStatus(null);
     }, [stopPolling]);
 
+    /**
+     * 取消后的收尾：提示一次，然后让表单恢复可用。
+     * 不重置的话 status 会一直非空，而 canSubmit 要求 !status，
+     * 导入按钮将永久禁用且页面上没有任何重置入口。
+     */
+    const finishCancelled = useCallback(() => {
+        toast.success(t("ui.backup.import.cancelled"));
+        resetState();
+    }, [t, resetState]);
+
     // 选项有效性：勾选笔记历史必须同时勾选笔记和附件（服务端同样校验）
     const optionsValid = includeNoteHistory ? includeNotes : true;
     // 至少勾选一项导入内容才允许确认
@@ -123,6 +134,9 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
     const canSubmit = Boolean(vault && file && optionsValid && hasAnyOption && !isSubmitting && !status);
 
     const phase = status?.phase;
+    // 终态（成功 / 失败）交给结果弹窗呈现，卡片区域只展示进行中的进度。
+    const isFailed = phase === "failed";
+    const isTerminal = phase === "success" || isFailed;
 
     /** 前端 ZIP 魔数校验：读前 4 字节 */
     const checkZipMagic = async (f: File): Promise<boolean> => {
@@ -200,8 +214,9 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                 if (st.phase === "success" || st.phase === "failed" || st.phase === "cancelled") {
                     taskIdRef.current = null;
                     stopPolling();
+                    // 成功 / 失败由结果弹窗呈现并负责重置；取消只需提示并恢复表单。
                     if (st.phase === "cancelled") {
-                        toast.success(t("ui.backup.import.cancelled"));
+                        finishCancelled();
                     }
                     if (st.phase === "success" && st.result) {
                         onImported?.(st.result);
@@ -217,7 +232,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
             }
             pollOnce();
         }, POLL_INTERVAL_MS);
-    }, [handleBackupImportStatus, t, onImported, stopPolling, applyStatus]);
+    }, [handleBackupImportStatus, onImported, stopPolling, applyStatus, finishCancelled]);
 
     const doImport = async () => {
         if (!file || !vault) return;
@@ -247,9 +262,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
             if (st.phase === "cancelled") {
                 taskIdRef.current = null;
                 stopPolling();
-                if (!allowPartial) {
-                    toast.success(t("ui.backup.import.cancelled"));
-                }
+                finishCancelled();
             }
         });
         // 确认请求无论成败，只要任务还没进入终态就恢复轮询——
@@ -268,34 +281,11 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
 
     return (
         <div className={cn("space-y-4", className)}>
-            {/* 结果视图 */}
-            {result ? (
-                <div className="space-y-4">
-                    <div className="p-4 rounded-xl border border-green-500/30 bg-green-500/10 space-y-2">
-                        <div className="flex items-center gap-2 font-semibold text-green-600 dark:text-green-400">
-                            <ShieldCheck className="h-4 w-4" />
-                            {t("ui.backup.import.result.title")}
-                        </div>
-                        <div className="text-sm text-muted-foreground space-y-1">
-                            <div>{t("ui.backup.import.result.vault")}: <span className="font-medium text-foreground">{result.vault}</span></div>
-                            <div>{t("ui.backup.import.result.notes")}: <span className="font-mono font-medium text-foreground">{result.notes}</span></div>
-                            <div>{t("ui.backup.import.result.files")}: <span className="font-mono font-medium text-foreground">{result.files}</span></div>
-                            <div>{t("ui.backup.import.result.settings")}: <span className="font-mono font-medium text-foreground">{result.settings}</span></div>
-                            <div>{t("ui.backup.import.result.history")}: <span className="font-mono font-medium text-foreground">{result.noteHistory}</span></div>
-                            {Boolean(result.skippedHistory) && (
-                                <div>{t("ui.backup.import.result.skippedHistory")}: <span className="font-mono font-medium text-foreground">{result.skippedHistory}</span></div>
-                            )}
-                        </div>
-                    </div>
-                    <Button variant="outline" onClick={resetState} className="w-full rounded-xl">
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        {t("ui.backup.import.again")}
-                    </Button>
-                </div>
-            ) : status && (phase === "validating" || phase === "importing" || phase === "await_partial") ? (
+            {status && (phase === "validating" || phase === "importing" || phase === "await_partial") ? (
                 /* 校验/等待确认/导入进度视图
                    await_partial 必须落在这里：它同样属于「任务进行中」，若掉进最后的
-                   else 分支会瞬间闪回导入表单，用户以为导入失败或没提交成功。 */
+                   else 分支会瞬间闪回导入表单，用户以为导入失败或没提交成功。
+                   成功 / 失败是终态，由下方的结果弹窗呈现，卡片不再占用区域。 */
                 <div className="space-y-4">
                     <div className="p-4 rounded-xl border border-primary/30 bg-primary/5 space-y-4">
                         <div className="flex items-center gap-2 font-semibold text-primary">
@@ -318,23 +308,6 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
 
                         <p className="text-xs text-muted-foreground">{t("ui.backup.import.progressTip")}</p>
                     </div>
-                </div>
-            ) : status && phase === "failed" ? (
-                /* 失败视图 */
-                <div className="space-y-4">
-                    <div className="p-4 rounded-xl border border-destructive/40 bg-destructive/10 space-y-2">
-                        <div className="flex items-center gap-2 font-semibold text-destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            {t("ui.backup.import.failed")}
-                        </div>
-                        {status.error?.message && (
-                            <p className="text-xs text-destructive/80 break-all">{status.error.message}</p>
-                        )}
-                    </div>
-                    <Button variant="outline" onClick={resetState} className="w-full rounded-xl">
-                        <RotateCcw className="h-4 w-4 mr-2" />
-                        {t("ui.backup.import.retry")}
-                    </Button>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -471,7 +444,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                 onConfirm={() => void doImport()}
             />
 
-            {/* 零信任校验：await_partial —— 已有/缺少提示，可选导入已有部分或取消本次导入 */}
+            {/* 校验不通过：await_partial —— 已有/缺少提示，可选导入已有部分或取消本次导入 */}
             <CountdownConfirmDialog
                 open={showPartialConfirm}
                 onOpenChange={() => {
@@ -500,6 +473,54 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                 seconds={3}
                 onConfirm={() => void confirmPartial(true)}
             />
+
+            {/* 导入结果弹窗：成功 / 失败。终态不再占用卡片区域，关闭即重置回导入表单。 */}
+            <Dialog
+                open={isTerminal}
+                onOpenChange={(open) => {
+                    // 关闭（含右上角 X、遮罩点击、ESC）即重置，回到初始导入表单
+                    if (!open) resetState();
+                }}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            {isFailed ? (
+                                <AlertTriangle className="h-5 w-5 text-destructive" />
+                            ) : (
+                                <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            )}
+                            {isFailed ? t("ui.backup.import.failed") : t("ui.backup.import.result.title")}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {isFailed ? (
+                        status?.error?.message ? (
+                            <p className="p-3 rounded-lg bg-destructive/5 border border-destructive/10 text-xs text-destructive break-all">
+                                {status.error.message}
+                            </p>
+                        ) : null
+                    ) : (
+                        <div className="text-sm text-muted-foreground space-y-1">
+                            <div>{t("ui.backup.import.result.vault")}: <span className="font-medium text-foreground">{result?.vault}</span></div>
+                            <div>{t("ui.backup.import.result.notes")}: <span className="font-mono font-medium text-foreground">{result?.notes}</span></div>
+                            <div>{t("ui.backup.import.result.files")}: <span className="font-mono font-medium text-foreground">{result?.files}</span></div>
+                            <div>{t("ui.backup.import.result.settings")}: <span className="font-mono font-medium text-foreground">{result?.settings}</span></div>
+                            <div>{t("ui.backup.import.result.history")}: <span className="font-mono font-medium text-foreground">{result?.noteHistory}</span></div>
+                            {Boolean(result?.skippedHistory) && (
+                                <div>{t("ui.backup.import.result.skippedHistory")}: <span className="font-mono font-medium text-foreground">{result?.skippedHistory}</span></div>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={resetState} className="rounded-xl">
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            {isFailed ? t("ui.backup.import.retry") : t("ui.backup.import.again")}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

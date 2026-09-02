@@ -982,5 +982,6 @@
   "ui.backup.import.scope.vaultConfig": "224e2ccda861c2514faa683b3683c361",
   "ui.backup.import.scope.noteHistory": "c827d8dbb76ce33219f64c6749893159",
   "api.backup.import.historyError": "93114aa012ca654062abf7248198053a",
-  "ui.backup.import.phase.awaitPartial": "47c20aef5abb1774896ecfc70578c899"
+  "ui.backup.import.phase.awaitPartial": "47c20aef5abb1774896ecfc70578c899",
+  "ui.backup.import.partial.desc": "c0c56ddbc25f18ad57c7a3df2367d673"
 }

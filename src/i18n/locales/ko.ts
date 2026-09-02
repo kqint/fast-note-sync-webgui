@@ -859,7 +859,7 @@ export default {
     "ui.backup.import.section.vaultConfig": "볼트 설정 (.obsidian)",
     "ui.backup.import.section.noteHistory": "노트 기록",
     "ui.backup.import.partial.title": "백업에 선택한 내용이 없습니다",
-    "ui.backup.import.partial.desc": "제로 트러스트 검증 실패.\n백업에 포함: {{available}}.\n누락: {{missing}}.\n포함된 부분만 가져오시겠습니까?",
+    "ui.backup.import.partial.desc": "검증 실패.\n백업에 포함: {{available}}.\n누락: {{missing}}.\n포함된 부분만 가져오시겠습니까?",
     "ui.backup.import.partial.confirm": "포함된 부분 가져오기",
     "ui.backup.import.partial.cancel": "가져오기 취소",
     "ui.backup.import.partial.joiner": ", ",

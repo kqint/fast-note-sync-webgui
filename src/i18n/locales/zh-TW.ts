@@ -859,7 +859,7 @@ export default {
     "ui.backup.import.section.vaultConfig": "倉庫設定 (.obsidian)",
     "ui.backup.import.section.noteHistory": "筆記歷史",
     "ui.backup.import.partial.title": "備份檔缺少所選內容",
-    "ui.backup.import.partial.desc": "零信任校驗未通過。\n備份檔中包含：{{available}}。\n缺少：{{missing}}。\n是否僅匯入已有的部分？",
+    "ui.backup.import.partial.desc": "校驗未通過。\n備份檔中包含：{{available}}。\n缺少：{{missing}}。\n是否僅匯入已有的部分？",
     "ui.backup.import.partial.confirm": "匯入已有部分",
     "ui.backup.import.partial.cancel": "取消本次匯入",
     "ui.backup.import.partial.joiner": "、",
