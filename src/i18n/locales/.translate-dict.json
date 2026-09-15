@@ -962,7 +962,7 @@
   "ui.unsaved.message": "b94c9d089dfa48145be65f71d4e009ed",
   "ui.unsaved.leave": "0a5ada90baf0eca1b301b659de9d72c5",
   "ui.unsaved.stay": "337a46d59cdfac30e8882d1a60c7613e",
-  "ui.settings.backup.importLimit.desc": "7b9545dcce0f0b90942000bbcc69bec7",
+  "ui.settings.backup.importLimit.desc": "35141ad89d66187d2ca954ecbd6514b8",
   "ui.nav.menuBackupRestore": "9f85c3f8a59b0188de62cb7f1649af3e",
   "ui.backup.restore.title": "6686b3717a8126e08754a3c45070ad28",
   "ui.backup.restore.desc": "b3311baf34cb206553bd6b99c72f5618",
@@ -987,5 +987,12 @@
   "ui.backup.import.partial.available": "af3b65cc1d1ab31c495937e5447a3f0c",
   "ui.backup.import.partial.missing": "d39d948b61454c2dfaa72f28e2e6256f",
   "ui.backup.import.partial.none": "d81bb206a889656035b929cd8bb1ef10",
-  "ui.backup.import.partial.prompt": "4bb4c7839e51fbc1e8ce1597fff6dc5e"
+  "ui.backup.import.partial.prompt": "4bb4c7839e51fbc1e8ce1597fff6dc5e",
+  "ui.settings.backup.exportDesc": "4a9d9c801e36315069d2a52a81b429e2",
+  "ui.settings.backup.importWarningDesc": "780e0cc44a919275255ea2965f3c93e6",
+  "ui.settings.backup.dropzone.placeholder": "dbcc4eceff93f0dda9cdab4df282a327",
+  "ui.backup.import.warning.desc": "c58920a7fbc357132083138dccc76a2e",
+  "ui.backup.import.file": "9f9baa11c64a349def744f69f5d4cce9",
+  "ui.backup.import.dropzone.placeholder": "286188b26937b5bbf7e4e047a7fd1d19",
+  "ui.backup.import.notZip": "578a3cc7f2762f2349e3e6ef34392091"
 }

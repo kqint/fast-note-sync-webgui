@@ -1575,7 +1575,10 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             <HardDrive className="h-5 w-5 text-muted-foreground" />
                                             <span className="text-sm font-medium">{t("ui.settings.backup.importLimit.title")}</span>
                                         </div>
-                                        <p className="text-xs text-muted-foreground whitespace-pre-line">{t("ui.settings.backup.importLimit.desc")}</p>
+                                        <p
+                                            className="rich-desc text-xs text-muted-foreground whitespace-pre-line"
+                                            dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.importLimit.desc") }}
+                                        />
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
                                                 id="backupImportSizeLimitEnabled"
@@ -1616,7 +1619,10 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             <Download className="h-5 w-5 text-muted-foreground" />
                                             <span className="text-sm font-medium">{t("ui.settings.backup.exportTitle")}</span>
                                         </div>
-                                        <p className="text-xs text-muted-foreground whitespace-pre-line">{t("ui.settings.backup.exportDesc")}</p>
+                                        <p
+                                            className="rich-desc text-xs text-muted-foreground whitespace-pre-line"
+                                            dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.exportDesc") }}
+                                        />
                                         <Button onClick={handleConfigExport} disabled={isConfigExporting} className="rounded-xl">
                                             {isConfigExporting ? (
                                                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
@@ -1638,14 +1644,22 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                                             <div className="text-sm">
                                                 <p className="font-semibold text-destructive">{t("ui.settings.backup.importWarningTitle")}</p>
-                                                <p className="text-xs text-destructive/80 mt-1">{t("ui.settings.backup.importWarningDesc")}</p>
+                                                <p
+                                                    className="rich-desc rich-desc-danger text-xs text-destructive/80 mt-1"
+                                                    dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.importWarningDesc") }}
+                                                />
                                             </div>
                                         </div>
                                         <FileDropzone
                                             value={configImportFile}
                                             onChange={setConfigImportFile}
                                             accept=".yaml,.yml,.txt"
-                                            placeholder={t("ui.settings.backup.dropzone.placeholder")}
+                                            placeholder={
+                                                <span
+                                                    className="rich-desc"
+                                                    dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.dropzone.placeholder") }}
+                                                />
+                                            }
                                         />
                                         {configImportFile && (
                                             <Button
@@ -1673,7 +1687,12 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                     open={showConfigImportConfirm}
                     onOpenChange={setShowConfigImportConfirm}
                     title={t("ui.settings.backup.importWarningTitle")}
-                    description={t("ui.settings.backup.importWarningDesc")}
+                    description={
+                        <span
+                            className="rich-desc rich-desc-danger"
+                            dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.importWarningDesc") }}
+                        />
+                    }
                     confirmLabel={t("ui.settings.backup.importConfirm")}
                     seconds={3}
                     loading={isConfigImporting}

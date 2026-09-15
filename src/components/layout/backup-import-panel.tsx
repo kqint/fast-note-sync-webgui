@@ -184,7 +184,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
     const isFailed = phase === "failed";
     const isTerminal = phase === "success" || isFailed;
 
-    /** 前端 ZIP 魔数校验：读前 4 字节 */
+    /** 前端 .zip 魔数校验：读前 4 字节 */
     const checkZipMagic = async (f: File): Promise<boolean> => {
         try {
             const buf = await f.slice(0, 4).arrayBuffer();
@@ -383,12 +383,20 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
 
                     {/* 备份包文件 */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-muted-foreground ml-1">{t("ui.backup.import.file")}</Label>
+                        <Label
+                            className="rich-desc text-xs font-semibold text-muted-foreground ml-1"
+                            dangerouslySetInnerHTML={{ __html: t("ui.backup.import.file") }}
+                        />
                         <FileDropzone
                             value={file}
                             onChange={onFileChange}
                             accept=".zip"
-                            placeholder={t("ui.backup.import.dropzone.placeholder")}
+                            placeholder={
+                                <span
+                                    className="rich-desc"
+                                    dangerouslySetInnerHTML={{ __html: t("ui.backup.import.dropzone.placeholder") }}
+                                />
+                            }
                             onInvalid={() => toast.error(t("ui.backup.import.notZip"))}
                         />
                     </div>
@@ -428,9 +436,9 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                         <label className="flex items-center gap-3 cursor-pointer">
                             <Checkbox checked={includeVaultConfig} onCheckedChange={(v) => setIncludeVaultConfig(Boolean(v))} />
                             <Settings2 className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
+                            <span className="rich-desc text-sm">
                                 {t("ui.backup.import.option.vaultConfig")}{" "}
-                                (<code className="font-mono text-xs bg-muted text-foreground px-1.5 py-0.5 rounded">.obsidian</code>)
+                                (<code>.obsidian</code>)
                             </span>
                         </label>
                         <label className={cn("flex items-center gap-3", includeNotes ? "cursor-pointer" : "cursor-not-allowed opacity-50")}>
@@ -441,9 +449,9 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                             />
                             <HistoryIcon className="h-4 w-4 text-muted-foreground" />
                             <div className="flex flex-col">
-                                <span className="text-sm">
+                                <span className="rich-desc text-sm">
                                     {t("ui.backup.import.option.noteHistory")}{" "}
-                                    (<code className="font-mono text-xs bg-muted text-foreground px-1.5 py-0.5 rounded">.fns/note_history.json</code>)
+                                    (<code>.fns/note_history.json</code>)
                                 </span>
                                 {!includeNotes && (
                                     <span className="text-[11px] text-muted-foreground">{t("ui.backup.import.option.noteHistoryDepends")}</span>

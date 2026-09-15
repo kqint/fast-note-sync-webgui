@@ -1,5 +1,5 @@
 import { FileText, UploadCloud, X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface FileDropzoneProps {
@@ -7,8 +7,8 @@ interface FileDropzoneProps {
     onChange: (file: File | null) => void;
     /** 允许的扩展名，逗号分隔，如 ".zip" 或 ".yaml,.yml,.txt" */
     accept?: string;
-    /** 未选中时的提示文案 */
-    placeholder?: string;
+    /** 未选中时的提示文案。传 ReactNode 时可在其中嵌入行内代码（如 <code>.zip</code>） */
+    placeholder?: ReactNode;
     /** 扩展名不与 accept 匹配时回调（供外层 toast 提示） */
     onInvalid?: (file: File) => void;
     className?: string;
