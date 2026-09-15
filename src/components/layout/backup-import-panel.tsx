@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/components/common/Toast";
 import {
     AlertTriangle,
+    CheckCircle2,
     FileUp,
     History as HistoryIcon,
     Loader2,
@@ -25,8 +26,9 @@ import {
     Settings2,
     ShieldCheck,
     UploadCloud,
+    XCircle,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface BackupImportPanelProps {
@@ -46,6 +48,50 @@ function availableSectionNames(available?: BackupImportTaskStatus["available"]):
     if (available.vaultConfig) keys.push("vaultConfig");
     if (available.noteHistory) keys.push("noteHistory");
     return keys;
+}
+
+interface SectionRowProps {
+    /** 行首状态图标（绿勾 / 红叉） */
+    icon: ReactNode;
+    /** 「包含」/「缺少」标签文案 */
+    label: string;
+    /** 部分键列表：notes / vaultConfig / noteHistory */
+    keys: string[];
+    /** 标签的语义色 class */
+    tagClassName: string;
+    /** 列表为空时的占位文案 */
+    emptyText: string;
+}
+
+/**
+ * 「包含 / 缺少」清单行：状态图标 + 语义色标签，替代原来的整句文本描述，
+ * 减少纯文本阅读负担。
+ *
+ * 由独立的结构化 content 容器承载，可使用正常的 <div> 布局，确保状态卡片样式不受
+ * AlertDialogDescription（HTML 为 p 标签）的语义与默认排版干扰。
+ */
+function SectionRow({ icon, label, keys, tagClassName, emptyText }: SectionRowProps) {
+    const { t } = useTranslation();
+    return (
+        <div className="flex items-start gap-2 text-[13px]">
+            <span className="mt-[3px] shrink-0">{icon}</span>
+            <span className="shrink-0 text-foreground/80">{label}</span>
+            {keys.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                    {keys.map((key) => (
+                        <span
+                            key={key}
+                            className={cn("inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium", tagClassName)}
+                        >
+                            {t(`ui.backup.import.section.${key}`)}
+                        </span>
+                    ))}
+                </div>
+            ) : (
+                <span className="text-xs text-muted-foreground">{emptyText}</span>
+            )}
+        </div>
+    );
 }
 
 /**
@@ -456,17 +502,34 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                     }
                 }}
                 title={t("ui.backup.import.partial.title")}
-                description={
-                    status
-                        ? t("ui.backup.import.partial.desc", {
-                              available: availableSectionNames(status.available)
-                                  .map((key) => t(`ui.backup.import.section.${key}`))
-                                  .join(t("ui.backup.import.partial.joiner")),
-                              missing: (status.missing ?? [])
-                                  .map((key) => t(`ui.backup.import.section.${key}`))
-                                  .join(t("ui.backup.import.partial.joiner")),
-                          })
-                        : ""
+                titleIcon={<AlertTriangle className="h-5 w-5 text-destructive dark:text-red-400" />}
+                content={
+                    status ? (
+                        <div className="space-y-3">
+                            {/* 副说明：降低透明度，避免抢占「包含 / 缺少」的主体对比信息 */}
+                            <p className="text-xs text-muted-foreground/70">{t("ui.backup.import.partial.subtitle")}</p>
+
+                            {/* 状态对比区域。作为独立 div 渲染，不能再嵌在 AlertDialogDescription 的 p 标签里。 */}
+                            <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-3">
+                                <SectionRow
+                                    icon={<CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />}
+                                    label={t("ui.backup.import.partial.available")}
+                                    keys={availableSectionNames(status.available)}
+                                    tagClassName="border-green-600/30 bg-green-600/15 text-green-700 dark:text-green-300"
+                                    emptyText={t("ui.backup.import.partial.none")}
+                                />
+                                <SectionRow
+                                    icon={<XCircle className="h-4 w-4 text-destructive dark:text-red-400" />}
+                                    label={t("ui.backup.import.partial.missing")}
+                                    keys={status.missing ?? []}
+                                    tagClassName="border-destructive/30 bg-destructive/15 text-destructive dark:text-red-400"
+                                    emptyText={t("ui.backup.import.partial.none")}
+                                />
+                            </div>
+
+                            <p className="text-sm text-foreground/80">{t("ui.backup.import.partial.prompt")}</p>
+                        </div>
+                    ) : null
                 }
                 confirmLabel={t("ui.backup.import.partial.confirm")}
                 cancelLabel={t("ui.backup.import.partial.cancel")}
