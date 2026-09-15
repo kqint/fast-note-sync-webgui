@@ -21,11 +21,11 @@ import {
     CheckCircle2,
     FileUp,
     History as HistoryIcon,
+    Import as ImportIcon,
     Loader2,
     RotateCcw,
     Settings2,
     ShieldCheck,
-    UploadCloud,
     XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
@@ -477,7 +477,7 @@ export function BackupImportPanel({ onImported, className }: BackupImportPanelPr
                         {isSubmitting ? (
                             <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
                         ) : (
-                            <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.backup.import.start")}</>
+                            <><ImportIcon className="h-4 w-4 mr-2" />{t("ui.backup.import.start")}</>
                         )}
                     </Button>
                     {!file && (

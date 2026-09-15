@@ -1,4 +1,4 @@
-import { FileText, UploadCloud, X } from "lucide-react";
+import { FileText, Import as ImportIcon, X } from "lucide-react";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -114,7 +114,7 @@ export function FileDropzone({ value, onChange, accept, placeholder, onInvalid, 
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center gap-2 py-6 px-4">
-                    <UploadCloud className={cn("h-8 w-8 transition-colors", isDragging ? "text-primary" : "text-muted-foreground/60")} />
+                    <ImportIcon className={cn("h-8 w-8 transition-colors", isDragging ? "text-primary" : "text-muted-foreground/60")} />
                     <p className="text-sm text-muted-foreground text-center">{placeholder}</p>
                 </div>
             )}

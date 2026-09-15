@@ -2,7 +2,7 @@ import { formatFileSize } from "@/lib/utils/format";
 import { useBackupHandle } from "@/components/api-handle/backup-handle";
 import { BackupImportHistory } from "@/lib/types/backup";
 import { BackupImportPanel } from "@/components/layout/backup-import-panel";
-import { UploadCloud, History, RefreshCw, ChevronLeft, ChevronRight, Loader2, CheckCircle2, AlertCircle, Clock, Ban, FileArchive } from "lucide-react";
+import { Import as ImportIcon, History, RefreshCw, ChevronLeft, ChevronRight, Loader2, CheckCircle2, AlertCircle, Clock, Ban, FileArchive } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useCallback, useEffect, useState } from "react";
@@ -66,7 +66,7 @@ export function BackupRestore() {
                     <div className="flex items-start justify-between gap-3 mb-6">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary/10 rounded-lg">
-                                <UploadCloud className="h-5 w-5 text-primary" />
+                                <ImportIcon className="h-5 w-5 text-primary" />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold">{t("ui.backup.restore.title")}</h2>

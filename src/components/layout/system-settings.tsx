@@ -1,5 +1,5 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
-import { GitBranch, UserPlus, HardDrive, Trash2, Clock, Shield, Loader2, Type, Lock, Save, HelpCircle, Github, Send, RefreshCw, Cpu, Download, Globe, Database, ChevronLeft, ChevronRight, SlidersHorizontal, BookOpen, Share2, Zap, Router, Eye, EyeOff, Plus, Sliders, Cog, DatabaseBackup, UploadCloud, AlertTriangle } from "lucide-react";
+import { GitBranch, UserPlus, HardDrive, Trash2, Clock, Shield, Loader2, Type, Lock, Save, HelpCircle, Github, Send, RefreshCw, Cpu, Download, Globe, Database, ChevronLeft, ChevronRight, SlidersHorizontal, BookOpen, Share2, Zap, Router, Eye, EyeOff, Plus, Sliders, Cog, DatabaseBackup, Import as ImportIcon, Upload, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
@@ -1616,7 +1616,7 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                     {/* 设置备份 */}
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3">
-                                            <Download className="h-5 w-5 text-muted-foreground" />
+                                            <Upload className="h-5 w-5 text-muted-foreground" />
                                             <span className="text-sm font-medium">{t("ui.settings.backup.exportTitle")}</span>
                                         </div>
                                         <p
@@ -1627,7 +1627,7 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                             {isConfigExporting ? (
                                                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
                                             ) : (
-                                                <><Download className="h-4 w-4 mr-2" />{t("ui.settings.backup.exportAction")}</>
+                                                <><Upload className="h-4 w-4 mr-2" />{t("ui.settings.backup.exportAction")}</>
                                             )}
                                         </Button>
                                     </div>
@@ -1637,7 +1637,7 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                     {/* 设置导入 */}
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-3">
-                                            <UploadCloud className="h-5 w-5 text-muted-foreground" />
+                                            <ImportIcon className="h-5 w-5 text-muted-foreground" />
                                             <span className="text-sm font-medium">{t("ui.settings.backup.importTitle")}</span>
                                         </div>
                                         <div className="flex items-start gap-3 p-3 rounded-xl border border-destructive/40 bg-destructive/10">
@@ -1671,7 +1671,7 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                                 {isConfigImporting ? (
                                                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
                                                 ) : (
-                                                    <><UploadCloud className="h-4 w-4 mr-2" />{t("ui.settings.backup.importAction")}</>
+                                                    <><ImportIcon className="h-4 w-4 mr-2" />{t("ui.settings.backup.importAction")}</>
                                                 )}
                                             </Button>
                                         )}
