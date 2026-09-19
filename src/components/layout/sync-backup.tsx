@@ -164,6 +164,15 @@ export function SyncBackup() {
                                             <span className="text-[10px] px-1.5 py-0.5 bg-accent rounded text-accent-foreground uppercase">
                                                 {t(`ui.backup.backupType.${config.type}`)}
                                             </span>
+                                            {config.type === "full" && (
+                                                <span
+                                                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded cursor-help"
+                                                    title={t("ui.backup.fullHistoryHint")}
+                                                >
+                                                    <HistoryIcon className="h-2.5 w-2.5" />
+                                                    {t("ui.backup.fullBadge")}
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Button

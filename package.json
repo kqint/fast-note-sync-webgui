@@ -11,8 +11,8 @@
     "test": "vitest --run",
     "test:watch": "vitest",
     "dist": "npx tsx scripts/copy-dist.ts",
-    "translate": "node scripts/translate-i18n.mjs --model Qwen/Qwen3.6-35B-A3B",
-    "t": "node scripts/translate-i18n.mjs --model Qwen/Qwen3.6-35B-A3B"
+    "translate": "node scripts/translate-i18n.mjs --model mimo-v2.5",
+    "t": "node scripts/translate-i18n.mjs --model mimo-v2.5"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",

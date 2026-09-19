@@ -11,10 +11,11 @@ import { create } from 'zustand';
  * - trash: 回收站
  * - settings: 设置（仅管理员）
  * - sync: 远端备份（计划中）
+ * - backup-restore: 备份恢复（导入备份包）
  * - git: Git 自动化（计划中）
  * - tokens: 令牌管理
  */
-export type ModuleId = 'dashboard' | 'vaults' | 'notes' | 'files' | 'trash' | 'config' | 'sync' | 'git' | 'settings' | 'sync-logs' | 'tokens';
+export type ModuleId = 'dashboard' | 'vaults' | 'notes' | 'files' | 'trash' | 'config' | 'sync' | 'backup-restore' | 'git' | 'settings' | 'sync-logs' | 'tokens';
 
 /** Pending navigation info */
 interface PendingNavigation {

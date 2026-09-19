@@ -1,4 +1,4 @@
-import { BackupConfig, BackupHistory, BackupConfigRequest } from "@/lib/types/backup";
+import { BackupConfig, BackupHistory, BackupConfigRequest, BackupImportTask, BackupImportTaskStatus, BackupImportHistory } from "@/lib/types/backup";
 import { useConfirmDialog } from "@/components/context/confirm-dialog-context";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
 import { buildApiHeaders } from "@/lib/utils/api-headers";
@@ -120,6 +120,90 @@ export function useBackupHandle() {
     }, [token, openConfirmDialog, t])
 
     /**
+     * 提交导入备份任务（异步；同步快检失败以错误码返回）
+     */
+    const handleBackupImportSubmit = useCallback(async (formData: FormData, callback: (data: BackupImportTask) => void) => {
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/backup/import"), {
+                method: "POST",
+                body: formData,
+                headers: buildApiHeaders({ token, includeContentType: false }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (res.data) {
+                    callback(res.data)
+                }
+            } else {
+                openConfirmDialog(`${res.message}${res.details ? `\n${res.details}` : ""}`, "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.error") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
+    /**
+     * 查询导入任务状态
+     */
+    const handleBackupImportStatus = useCallback(async (taskId: string, callback: (data: BackupImportTaskStatus) => void) => {
+        try {
+            const url = env.API_URL + `/api/backup/import/status?taskId=${encodeURIComponent(taskId)}`;
+            const response = await fetch(addCacheBuster(url), {
+                method: "GET",
+                headers: buildApiHeaders({ token }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (res.data) {
+                    callback(res.data)
+                }
+            } else {
+                openConfirmDialog(res.message + ": " + (res.details || ""), "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.taskError") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
+    /**
+     * 确认/取消 await_partial 导入任务
+     */
+    const handleBackupImportConfirm = useCallback(async (taskId: string, allowPartial: boolean, callback?: (data: BackupImportTaskStatus) => void) => {
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/backup/import/confirm"), {
+                method: "POST",
+                body: JSON.stringify({ taskId, allowPartial }),
+                headers: buildApiHeaders({ token }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (callback && res.data) {
+                    callback(res.data)
+                }
+            } else {
+                openConfirmDialog(res.message + ": " + (res.details || ""), "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.taskError") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
+    /**
      * 获取备份历史记录
      */
     const handleBackupHistory = useCallback(async (page: number, pageSize: number, configId: number, callback?: (data: { list: BackupHistory[], total: number }) => void) => {
@@ -157,17 +241,62 @@ export function useBackupHandle() {
         }
     }, [token, openConfirmDialog, t])
 
+    /**
+     * 获取导入历史记录
+     */
+    const handleBackupImportHistory = useCallback(async (page: number, pageSize: number, callback?: (data: { list: BackupImportHistory[], total: number }) => void) => {
+        try {
+            const url = env.API_URL + `/api/backup/import/historys?page=${page}&pageSize=${pageSize}`;
+
+            const response = await fetch(addCacheBuster(url), {
+                method: "GET",
+                headers: buildApiHeaders({ token }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Network response was not ok")
+            }
+
+            const res = await response.json()
+            if (res.code < 100 && res.code > 0) {
+                if (callback) {
+                    // 兼容处理：可能返回 ListRes，也可能直接返回 Array
+                    if (res.data && res.data.list) {
+                        const total = res.data.pager?.totalRows ?? res.data.total ?? 0;
+                        callback({ list: res.data.list, total })
+                    } else if (res.data && Array.isArray(res.data)) {
+                        callback({ list: res.data, total: res.total ?? -1 })
+                    } else {
+                        callback({ list: [], total: 0 })
+                    }
+                }
+            } else {
+                openConfirmDialog(res.message + ": " + res.details, "error")
+            }
+        } catch (error) {
+            openConfirmDialog(t("api.backup.import.historyError") + ": " + error, "error")
+        }
+    }, [token, openConfirmDialog, t])
+
     return useMemo(() => ({
         handleBackupConfigList,
         handleBackupConfigDelete,
         handleBackupConfigUpdate,
         handleBackupExecute,
         handleBackupHistory,
+        handleBackupImportSubmit,
+        handleBackupImportStatus,
+        handleBackupImportConfirm,
+        handleBackupImportHistory,
     }), [
         handleBackupConfigList,
         handleBackupConfigDelete,
         handleBackupConfigUpdate,
         handleBackupExecute,
         handleBackupHistory,
+        handleBackupImportSubmit,
+        handleBackupImportStatus,
+        handleBackupImportConfirm,
+        handleBackupImportHistory,
     ])
 }

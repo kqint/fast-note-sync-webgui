@@ -1,4 +1,4 @@
-import { Library, NotepadText, ArchiveX, Settings, DatabaseBackup, GitPullRequestArrow, Layers, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, FileJson, Logs } from "lucide-react";
+import { Library, NotepadText, ArchiveX, ArchiveRestore, Settings, DatabaseBackup, GitPullRequestArrow, Layers, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, FileJson, Logs } from "lucide-react";
 import { Fragment, useEffect, useRef, useState, useCallback } from "react";
 import { useAppStore, type ModuleId } from "@/stores/app-store";
 import { NavItem } from "@/components/navigation/NavItem";
@@ -86,6 +86,7 @@ export function FloatingNav({ isAdmin, className }: FloatingNavProps) {
       { id: "settings", icon: FileJson, labelKey: "ui.nav.menuSettingsBrowser" },
       { id: "sync-logs", icon: Logs, labelKey: "ui.nav.menuSyncLogs" },
       { id: "sync", icon: DatabaseBackup, labelKey: "ui.nav.menuSync" },
+      { id: "backup-restore", icon: ArchiveRestore, labelKey: "ui.nav.menuBackupRestore" },
       { id: "git", icon: GitPullRequestArrow, labelKey: "ui.nav.menuGit" },
     ]
 

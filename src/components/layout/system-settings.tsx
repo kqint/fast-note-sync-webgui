@@ -1,5 +1,5 @@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
-import { GitBranch, UserPlus, HardDrive, Trash2, Clock, Shield, Loader2, Type, Lock, Save, HelpCircle, Github, Send, RefreshCw, Cpu, Download, Globe, Database, ChevronLeft, ChevronRight, SlidersHorizontal, BookOpen, Share2, Zap, Router, Eye, EyeOff, Plus, Sliders, Cog } from "lucide-react";
+import { GitBranch, UserPlus, HardDrive, Trash2, Clock, Shield, Loader2, Type, Lock, Save, HelpCircle, Github, Send, RefreshCw, Cpu, Download, Globe, Database, ChevronLeft, ChevronRight, SlidersHorizontal, BookOpen, Share2, Zap, Router, Eye, EyeOff, Plus, Sliders, Cog, DatabaseBackup, Import as ImportIcon, Upload, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { addCacheBuster } from "@/lib/utils/cache-buster";
@@ -23,6 +23,8 @@ import { SupportList } from "./support-list";
 import { Overview } from "./overview";
 import { UserManagment } from "./user-managment";
 import { SourceProbePanel } from "./source-probe-panel";
+import { CountdownConfirmDialog } from "@/components/common/countdown-confirm-dialog";
+import { FileDropzone } from "@/components/common/file-dropzone";
 
 
 interface SystemConfig {
@@ -67,6 +69,8 @@ interface SystemConfig {
     ftsBleveStoreRaw: boolean
     gitName: string
     gitEmail: string
+    backupImportSizeLimitEnabled: boolean
+    backupImportSizeLimit: string
 }
 
 interface CloudflareConfig {
@@ -115,6 +119,12 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
     const [showDbPassword, setShowDbPassword] = useState(false)
     const [activeTab, setActiveTab] = useState("font")
     const [headersList, setHeadersList] = useState<{ id: string; key: string; value: string }[]>([])
+    // 设置备份与导入状态
+    const [isConfigExporting, setIsConfigExporting] = useState(false)
+    const [configImportFile, setConfigImportFile] = useState<File | null>(null)
+    const [isConfigImporting, setIsConfigImporting] = useState(false)
+    const [showConfigImportConfirm, setShowConfigImportConfirm] = useState(false)
+    const [isSavingImportLimit, setIsSavingImportLimit] = useState(false)
 
     const addHeaderRow = () => {
         setHeadersList(prev => [
@@ -404,6 +414,95 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
             toast.error(t("api.system.gc.error"))
         } finally {
             setIsGCing(false)
+        }
+    }
+
+    // 导出服务端配置文件 (config/config.yaml)
+    const handleConfigExport = async () => {
+        setIsConfigExporting(true)
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/admin/config/export"), {
+                headers: buildApiHeaders({
+                    token,
+                    includeDomain: false,
+                    includeContentType: false,
+                }),
+            })
+            if (!response.ok) throw new Error(`HTTP ${response.status}`)
+            const blob = await response.blob()
+            const url = URL.createObjectURL(blob)
+            const link = document.createElement("a")
+            link.href = url
+            link.download = "config.yaml"
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(url)
+            toast.success(t("ui.settings.backup.exportSuccess"))
+        } catch {
+            toast.error(t("ui.settings.backup.exportError"))
+        } finally {
+            setIsConfigExporting(false)
+        }
+    }
+
+    // 导入服务端配置文件（覆盖 config/config.yaml，重启后生效）
+    const handleConfigImport = async () => {
+        if (!configImportFile) return
+        setIsConfigImporting(true)
+        try {
+            const formData = new FormData()
+            formData.append("file", configImportFile)
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/admin/config/import"), {
+                method: "POST",
+                body: formData,
+                headers: buildApiHeaders({
+                    token,
+                    includeDomain: false,
+                    includeContentType: false,
+                }),
+            })
+            const res = await response.json()
+            if (res.code > 0 && res.code < 200 && res.status !== false) {
+                toast.success(t("ui.settings.backup.importSuccess"))
+                setConfigImportFile(null)
+                // 导入成功后提示重启以生效
+                setShowRestartConfirm(true)
+            } else {
+                toast.error(`${res.message || t("ui.settings.backup.importError")}${res.details ? `\n${res.details}` : ""}`)
+            }
+        } catch {
+            toast.error(t("ui.settings.backup.importError"))
+        } finally {
+            setIsConfigImporting(false)
+        }
+    }
+
+    // 保存导入大小限制（仅携带这两个字段做部分更新，避免误提交其他标签页未保存的改动）
+    const handleSaveImportLimit = async () => {
+        if (!config) return
+        const size = (config.backupImportSizeLimit || "2GB").trim() || "2GB"
+        setIsSavingImportLimit(true)
+        try {
+            const response = await fetch(addCacheBuster(env.API_URL + "/api/admin/config"), {
+                method: "POST",
+                headers: buildApiHeaders({ token }),
+                body: JSON.stringify({
+                    backupImportSizeLimitEnabled: config.backupImportSizeLimitEnabled,
+                    backupImportSizeLimit: size,
+                }),
+            })
+            const res = await response.json()
+            if (res.code > 0 && res.code < 200 && res.status !== false) {
+                toast.success(t("ui.settings.saveSuccess"))
+                setConfig(prev => prev ? { ...prev, backupImportSizeLimit: size } : null)
+            } else {
+                toast.error(`${res.message || t("ui.settings.saveFailed")}${res.details ? `\n${res.details}` : ""}`)
+            }
+        } catch {
+            toast.error(t("ui.settings.saveFailed"))
+        } finally {
+            setIsSavingImportLimit(false)
         }
     }
 
@@ -736,6 +835,10 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                     <TabsTrigger value="advanced" className="flex-none px-6 h-12 rounded-none border-y-transparent border-r-transparent border-l-transparent bg-transparent data-[state=active]:bg-card transition-all font-medium text-muted-foreground data-[state=active]:text-primary">
                                         <Cog className="h-4 w-4 mr-2" />
                                         {t("ui.settings.advancedConfig")}
+                                    </TabsTrigger>
+                                    <TabsTrigger value="backup" className="flex-none px-6 h-12 rounded-none border-y-transparent border-r-transparent border-l-transparent bg-transparent data-[state=active]:bg-card transition-all font-medium text-muted-foreground data-[state=active]:text-primary">
+                                        <DatabaseBackup className="h-4 w-4 mr-2" />
+                                        {t("ui.settings.backup.tab")}
                                     </TabsTrigger>
                                 </TabsList>
                                 {showRightScroll && (
@@ -1458,14 +1561,147 @@ export function SystemSettings({ onBack, isDashboard = false, isAdmin = false }:
                                         </Button>
                                     </div>
                                 </TabsContent>
-                            </div>
-                        </Tabs>
-                    </div>
-                ) : null}
 
-            </div>
-        </div>
-    )
-}
+                                {/* 备份与导入 */}
+                                <TabsContent value="backup" className="p-6 space-y-5 mt-0 outline-none">
+                                    <h2 className="text-lg font-bold text-card-foreground flex items-center gap-2">
+                                        <DatabaseBackup className="h-5 w-5" />
+                                        {t("ui.settings.backup.tab")}
+                                    </h2>
+
+                                    {/* 导入大小限制 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <HardDrive className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.importLimit.title")}</span>
+                                        </div>
+                                        <p
+                                            className="rich-desc text-xs text-muted-foreground whitespace-pre-line"
+                                            dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.importLimit.desc") }}
+                                        />
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id="backupImportSizeLimitEnabled"
+                                                checked={config.backupImportSizeLimitEnabled}
+                                                onCheckedChange={(checked) => updateConfig({ backupImportSizeLimitEnabled: !!checked })}
+                                            />
+                                            <Label htmlFor="backupImportSizeLimitEnabled" className="text-sm cursor-pointer">
+                                                {t("ui.settings.backup.importLimit.enabled")}
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-sm text-muted-foreground whitespace-nowrap">{t("ui.settings.backup.importLimit.size")}</span>
+                                            <Input
+                                                value={config.backupImportSizeLimit}
+                                                onChange={(e) => updateConfig({ backupImportSizeLimit: e.target.value })}
+                                                placeholder="2GB"
+                                                disabled={!config.backupImportSizeLimitEnabled}
+                                                className="rounded-xl max-w-[160px]"
+                                            />
+                                            <p className="text-xs text-muted-foreground">{t("ui.settings.backup.importLimit.sizeHint")}</p>
+                                        </div>
+                                        <div className="pt-2">
+                                            <Button onClick={handleSaveImportLimit} disabled={isSavingImportLimit} className="rounded-xl">
+                                                {isSavingImportLimit ? (
+                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                                ) : (
+                                                    <><Save className="h-4 w-4 mr-2" />{t("ui.settings.saveSettings")}</>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-border" />
+
+                                    {/* 设置备份 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <Upload className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.exportTitle")}</span>
+                                        </div>
+                                        <p
+                                            className="rich-desc text-xs text-muted-foreground whitespace-pre-line"
+                                            dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.exportDesc") }}
+                                        />
+                                        <Button onClick={handleConfigExport} disabled={isConfigExporting} className="rounded-xl">
+                                            {isConfigExporting ? (
+                                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                            ) : (
+                                                <><Upload className="h-4 w-4 mr-2" />{t("ui.settings.backup.exportAction")}</>
+                                            )}
+                                        </Button>
+                                    </div>
+
+                                    <div className="border-t border-border" />
+
+                                    {/* 设置导入 */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <ImportIcon className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-sm font-medium">{t("ui.settings.backup.importTitle")}</span>
+                                        </div>
+                                        <div className="flex items-start gap-3 p-3 rounded-xl border border-destructive/40 bg-destructive/10">
+                                            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                                            <div className="text-sm">
+                                                <p className="font-semibold text-destructive">{t("ui.settings.backup.importWarningTitle")}</p>
+                                                <p
+                                                    className="rich-desc rich-desc-danger text-xs text-destructive/80 mt-1"
+                                                    dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.importWarningDesc") }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <FileDropzone
+                                            value={configImportFile}
+                                            onChange={setConfigImportFile}
+                                            accept=".yaml,.yml,.txt"
+                                            placeholder={
+                                                <span
+                                                    className="rich-desc"
+                                                    dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.dropzone.placeholder") }}
+                                                />
+                                            }
+                                        />
+                                        {configImportFile && (
+                                            <Button
+                                                variant="destructive"
+                                                disabled={isConfigImporting}
+                                                onClick={() => setShowConfigImportConfirm(true)}
+                                                className="rounded-xl"
+                                            >
+                                                {isConfigImporting ? (
+                                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />{t("ui.auth.submitting")}</>
+                                                ) : (
+                                                    <><ImportIcon className="h-4 w-4 mr-2" />{t("ui.settings.backup.importAction")}</>
+                                                )}
+                                            </Button>
+                                        )}
+                                     </div>
+                                 </TabsContent>
+                             </div>
+                         </Tabs>
+                     </div>
+                 ) : null}
+
+                {/* 设置导入 3 秒倒计时确认小窗 */}
+                <CountdownConfirmDialog
+                    open={showConfigImportConfirm}
+                    onOpenChange={setShowConfigImportConfirm}
+                    title={t("ui.settings.backup.importWarningTitle")}
+                    description={
+                        <span
+                            className="rich-desc rich-desc-danger"
+                            dangerouslySetInnerHTML={{ __html: t("ui.settings.backup.importWarningDesc") }}
+                        />
+                    }
+                    confirmLabel={t("ui.settings.backup.importConfirm")}
+                    seconds={3}
+                    loading={isConfigImporting}
+                    onConfirm={handleConfigImport}
+                />
+
+             </div>
+         </div>
+     )
+ }
 
 export default SystemSettings
